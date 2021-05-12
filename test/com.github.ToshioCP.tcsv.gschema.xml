@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema path="/com/github/ToshioCP/tcsv/" id="com.github.ToshioCP.tcsv">
+    <key name="font" type="s">
+      <default>'Monospace 12'</default>
+      <summary>Font</summary>
+      <description>The font to be used for GtkColumnView.</description>
+    </key>
+  </schema>
+</schemalist>

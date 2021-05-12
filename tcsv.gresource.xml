@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/ToshioCP/tcsv">
+    <file>tcsvwindow.ui</file>
+    <file>menu.ui</file>
+    <file>tcsvalert.ui</file>
+    <file>tcsvpref.ui</file>
+  </gresource>
+</gresources>

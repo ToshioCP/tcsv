@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="TCsvWindow" parent="GtkApplicationWindow">
+    <property name="title">Csv viewerr</property>
+    <property name="default-width">1200</property>
+    <property name="default-height">800</property>
+    <child>
+      <object class="GtkBox" id="boxv">
+        <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+        <child>
+          <object class="GtkBox" id="boxh">
+            <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+            <child>
+              <object class="GtkLabel" id="dmy1">
+                <property name="width-chars">10</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnar">
+                <property name="label">Add Record</property>
+                <property name="action-name">win.addrec</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnrr">
+                <property name="label">Remove Record</property>
+                <property name="action-name">win.rmrec</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="dmy2">
+                <property name="hexpand">TRUE</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btno">
+                <property name="label">Open</property>
+                <property name="action-name">win.open</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btns">
+                <property name="label">Save</property>
+                <property name="action-name">win.save</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnc">
+                <property name="label">Close</property>
+                <property name="action-name">win.close</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuButton" id="btnm">
+                <property name="direction">down</property>
+                <property name="halign">start</property>
+                <property name="icon-name">open-menu-symbolic</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="dmy3">
+                <property name="width-chars">10</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="scr">
+            <property name="hexpand">TRUE</property>
+            <property name="vexpand">TRUE</property>
+            <child>
+              <object class="GtkColumnView" id="columnview">
+                <property name="model">
+                  <object class="GtkSingleSelection" id="singleselection">
+                    <property name="model">
+                      <object class="GtkSortListModel" id="sortlist">
+                        <binding name="sorter">
+                          <lookup name="sorter">columnview</lookup>
+                        </binding>
+                      </object>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>
+
