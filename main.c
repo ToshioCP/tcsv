@@ -38,6 +38,7 @@ app_startup (GApplication *application) {
     { "win.close", { "<Control>w", NULL } },
     { "win.saveas", { "<Shift><Control>s", NULL } },
     { "win.pref", { "<Control>p", NULL } },
+    { "win.quit", { "<Control>q", NULL } },
   };
 
   for (i = 0; i < G_N_ELEMENTS(action_accels); i++)

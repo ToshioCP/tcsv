@@ -1,3 +1,4 @@
+#include <gtk/gtk.h>
 #include "tcsvwindow.h"
 #include "tcsvalert.h"
 #include "tcsvpref.h"
@@ -9,11 +10,12 @@ struct _TCsvWindow {
   GtkColumnView *columnview;
   GtkSortListModel *sortlist;
   GListStore *liststore;
-  GtkStringList *header;
   GtkMenuButton *btnm;
-  GFile *file;
+
+  GtkStringList *header;
   int n_row;
   int n_column;
+  GFile *file;
   gboolean saved;
   GSettings *settings;
 };
@@ -48,11 +50,16 @@ before_close (GtkWindow *window, gpointer user_data) {
 }
 
 char *
-get_string (GtkListItem *item, GtkStringList *stringlist, int i) {
+get_string0 (GtkStringList *stringlist, int i) {
   if (GTK_IS_STRING_LIST (stringlist))
     return g_strdup (gtk_string_list_get_string (stringlist, i));
   else
     return NULL;
+}
+
+char *
+get_string (GtkListItem *item, GtkStringList *stringlist, int i) {
+  return get_string0 (stringlist, i);
 }
 
 static GBytes *
@@ -84,27 +91,17 @@ get_bytes (int position) {
   return g_bytes_new_take (data, size);
 }
 
-static void
-t_csv_column_view_init (GtkColumnView *columnview, GListStore *liststore, GtkStringList *header, int n_row, int n_column) {
-  g_return_if_fail (GTK_IS_COLUMN_VIEW (columnview));
-  g_return_if_fail (G_IS_LIST_STORE (liststore));
-  g_return_if_fail (GTK_IS_STRING_LIST (header));
-
-  GtkColumnViewColumn *column;
-  GtkListItemFactory *factory;
-  int j;
-
-  for (j=0; j<n_column; ++j) {
-    factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
-    column = gtk_column_view_column_new (gtk_string_list_get_string (header, j), factory);
-    gtk_column_view_append_column (columnview, column);
-  }
-}
-
+/* Read csv file, build listmodel and columnview */
 static void
 t_csv_window_read (TCsvWindow *win, GFile *file) {
   GtkWidget *message_dialog;
   GError *err = NULL;
+  GtkColumnViewColumn *column;
+  GtkListItemFactory *factory;
+  GtkSorter *sorter;
+  GtkExpression *params[1];
+  GtkExpression *expression;
+  int j;
 
   if (! csv_read (win->liststore, file, &win->n_row, &win->n_column, &err)) {
     message_dialog = gtk_message_dialog_new (GTK_WINDOW (win), GTK_DIALOG_MODAL,
@@ -113,17 +110,44 @@ t_csv_window_read (TCsvWindow *win, GFile *file) {
     g_signal_connect (message_dialog, "response", G_CALLBACK (gtk_window_destroy), NULL);
     gtk_widget_show (message_dialog);
     g_error_free (err);
-  } else {
-    win->file = file;
-    win->header = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (win->liststore), 0));
-    g_list_store_remove (win->liststore, 0);
-    --win->n_row;
-    t_csv_column_view_init (win->columnview, win->liststore, win->header, win->n_row, win->n_column);
+    return;
+  }
+  win->file = file;
+  win->header = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (win->liststore), 0));
+  g_list_store_remove (win->liststore, 0);
+  --win->n_row;
+  for (j=0; j<win->n_column; ++j) {
+    factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
+    column = gtk_column_view_column_new (gtk_string_list_get_string (win->header, j), factory);
+ 
+    params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
+    expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (get_string0), NULL, NULL);
+    sorter = GTK_SORTER (gtk_string_sorter_new (expression));
+    gtk_column_view_column_set_sorter (column, sorter);
+
+    gtk_column_view_append_column (win->columnview, column);
   }
 }
 
-/* ----- read/write functions ----- */
+/* Close and unset columnview. remove listmodel */
+static void
+t_csv_window_close (TCsvWindow *win) {
+  GListModel *columns;
+  GtkColumnViewColumn *column;
+  int j;
 
+  columns = gtk_column_view_get_columns (win->columnview);
+  for (j=win->n_column-1; j>=0; --j) {
+    column = GTK_COLUMN_VIEW_COLUMN (g_list_model_get_item (columns, j));
+    gtk_column_view_remove_column (win->columnview, column);
+  }
+  g_clear_object (&win->header);
+  g_list_store_remove_all (win->liststore);
+  win->n_row = win->n_column = 0;
+  g_clear_object (&win->file);
+}
+
+/* ----- read/write functions ----- */
 static void
 open_dialog_response(GtkWidget *dialog, gint response, TCsvWindow *win) {
   GFile *file;
@@ -131,7 +155,7 @@ open_dialog_response(GtkWidget *dialog, gint response, TCsvWindow *win) {
   if (response == GTK_RESPONSE_ACCEPT
       && G_IS_FILE (file = gtk_file_chooser_get_file (GTK_FILE_CHOOSER (dialog))))
     t_csv_window_read (win, file);
-  g_object_unref (file);
+  /* file is taken to win->file, so don't unref it. */
   gtk_window_destroy (GTK_WINDOW (dialog));
 }
 
@@ -176,7 +200,6 @@ t_csv_window_saveas (TCsvWindow *win) {
 }
 
 /* ----- action activated handlers ----- */
-
 static void
 add_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) { }
 static void
@@ -217,7 +240,7 @@ close_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data)
   TCsvAlert *alert;
 
   if (win->saved)
-    gtk_window_destroy (GTK_WINDOW (win));
+    t_csv_window_close (win);
   else {
     alert = T_CSV_ALERT (t_csv_alert_new (GTK_WINDOW (win)));
     t_csv_alert_set_message (alert, "Contents aren't saved yet.\nAre you sure to close?");
@@ -243,6 +266,22 @@ pref_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) 
   gtk_widget_show (pref);
 }
 
+static void
+quit_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+  TCsvAlert *alert;
+
+  if (win->saved)
+    gtk_window_destroy (GTK_WINDOW (win));
+  else {
+    alert = T_CSV_ALERT (t_csv_alert_new (GTK_WINDOW (win)));
+    t_csv_alert_set_message (alert, "Contents aren't saved yet.\nAre you sure to close?");
+    t_csv_alert_set_button_label (alert, "Close");
+    g_signal_connect (GTK_DIALOG (alert), "response", G_CALLBACK (alert_response_cb), win);
+    gtk_widget_show (GTK_WIDGET (alert));
+  }
+}
+
 /* gsettings changed::font signal handler */
 static void
 changed_font_cb (GSettings *settings, char *key, gpointer user_data) {
@@ -261,13 +300,12 @@ t_csv_window_init (TCsvWindow *win) {
   GtkBuilder *build;
   GMenuModel *menu;
 
-  win->file = NULL;
+  win->header = NULL;
   win->n_row = win->n_column = 0;
+  win->file = NULL;
   win->saved = TRUE;
 
   gtk_widget_init_template (GTK_WIDGET (win));
-  win->liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
-  gtk_sort_list_model_set_model (win->sortlist, G_LIST_MODEL (win->liststore));
 
   build = gtk_builder_new_from_resource ("/com/github/ToshioCP/tcsv/menu.ui");
   menu = G_MENU_MODEL (gtk_builder_get_object (build, "menu"));
@@ -276,6 +314,7 @@ t_csv_window_init (TCsvWindow *win) {
 
   win->settings = g_settings_new ("com.github.ToshioCP.tcsv");
   g_signal_connect (win->settings, "changed::font", G_CALLBACK (changed_font_cb), win);
+  changed_font_cb(win->settings, "font", win);
 
 /* ----- action ----- */
   const GActionEntry win_entries[] = {
@@ -288,12 +327,11 @@ t_csv_window_init (TCsvWindow *win) {
     { "close", close_activated, NULL, NULL, NULL },
     { "saveas", saveas_activated, NULL, NULL, NULL },
     { "pref", pref_activated, NULL, NULL, NULL },
+    { "quit", quit_activated, NULL, NULL, NULL },
   };
   g_action_map_add_action_entries (G_ACTION_MAP (win), win_entries, G_N_ELEMENTS (win_entries), win);
 
   g_signal_connect (win, "close-request", G_CALLBACK (before_close), NULL);
-
-  changed_font_cb(win->settings, "font", win);
 }
 
 static void
@@ -301,9 +339,10 @@ t_csv_window_class_init (TCsvWindowClass *class) {
 /*  GObjectClass *object_class = G_OBJECT_CLASS (class);*/
 
   gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (class), "/com/github/ToshioCP/tcsv/tcsvwindow.ui");
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, btnm);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, columnview);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, sortlist);
+  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, liststore);
+  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, btnm);
 }
 
 GtkWidget *

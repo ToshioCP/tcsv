@@ -15,7 +15,7 @@ void
 set_font_for_display (GtkWindow *win, const char *fontfamily, const char *fontstyle, const char *fontweight, int fontsize) {
   char *textview_css;
 
-  textview_css = g_strdup_printf ("textview {padding: 10px; font-family: \"%s\"; font-style: %s; font-weight: %s; font-size: %dpt;}",
+  textview_css = g_strdup_printf ("label {font-family: \"%s\"; font-style: %s; font-weight: %s; font-size: %dpt;}",
                                       fontfamily, fontstyle, fontweight, fontsize);
   set_css_for_display (win, textview_css);
 } 
