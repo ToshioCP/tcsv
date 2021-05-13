@@ -3,12 +3,12 @@
 #include "../tcsv.c"
 
 static char *sample1 = 
-"a,\"bc\",def,\"ghi\"\n"
+"a,\"bc\",,\"ghi\"\n"
 "0,\"1, 2\",3,\"4, 5\nand 6\"\n"
 "\"one\",\"two\",\"three\",\"and \"\"four\"\".\"";
 
 static char *sample1_array[3][4] = {
-  {"a", "bc", "def", "ghi" },
+  {"a", "bc", "", "ghi" },
   {"0", "1, 2", "3", "4, 5\nand 6"},
   {"one", "two", "three", "and \"four\"."}
 };
@@ -92,8 +92,7 @@ test_csv_real_read (void) {
         if (s == NULL)
           g_print ("(%d, %d) string is NULL.\n", i, j);
         else if (strcmp (s, sample1_array[i][j]) != 0) {
-          g_print ("Expected string is %s.\n", sample1_array[i][j]);
-          g_print ("But, returned string was %s.\n", s);
+          g_print ("(%d, %d) string is different. '%s' is expected, but '%s' is returned.\n", i, j, sample1_array[i][j], s);
         }
       }
     }
@@ -133,8 +132,8 @@ test_csv_real_write (void) {
   else {
     if (strcmp (csv, contents) != 0) {
       g_print ("Csv write error. (The contents of the csv file is different from what is expected.)\n");
-      g_print ("Expected contents are \'%s\'.\n", csv);
-      g_print ("The returned contents are \'%s\'.\n", contents);
+      g_print ("Expected contents are '%s'.\n", csv);
+      g_print ("The returned contents are '%s'.\n", contents);
     }
     g_free (contents);
   }
@@ -215,7 +214,7 @@ test_csv_read (void) {
   int i, j;
   char *a[3][4] = {
     {"a", "bc", "def", "あいう"},
-    {"0", "1", "3", "6"},
+    {"0", "", "3", "6"},
     {"one", "二", "three", "and \"four\"."}
   };
   const char *s;
@@ -234,8 +233,11 @@ test_csv_read (void) {
     for (i=0; i<n_row; ++i) {
       stringlist = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i));
       for (j=0; j<n_column; ++j) {
-        if (strcmp ((s = gtk_string_list_get_string (stringlist, j)), a[i][j]) != 0)
-          g_print ("(%d, %d) string is different. %s is expected, but %s is returned.\n", i+1, j+1, a[i][j], s);
+        s = gtk_string_list_get_string (stringlist, j);
+        if (s == NULL)
+          g_print ("(%d, %d) string is NULL.\n", i, j);
+        else if (strcmp (s, a[i][j]) != 0)
+          g_print ("(%d, %d) string is different. '%s' is expected, but '%s' is returned.\n", i, j, a[i][j], s);
       }
     }
   }
@@ -256,6 +258,38 @@ test_csv_read (void) {
   g_object_unref (liststore);
 }
 
+static int
+t_strcmp_len (char *s, char *t, int n) {
+/* s and t can end without '\0', but their length must be greater than n */
+  int i;
+
+  if (n == 0)
+    return 0;
+  else if (n < 0)
+    return -2;
+  for (i=0; i<n; ++i) {
+    if (s[i] > t[i])
+      return 1;
+    else if (s[i] <t[i])
+      return -1;
+  }
+  return 0;
+}
+
+static void
+test_t_strcmp_len (void) {
+  char s[] = "abcde";
+  char t[] = "abcfg";
+  int result[] = {-2, 0, 0, 0, 0, -1, -1};
+  int i;
+
+  for (i=-1; i<6; ++i)
+    if (t_strcmp_len(s, t, i) != result[i+1])
+      g_print ("%d is expected, but t_strcmp_len returned %d.\n", result[i+1], t_strcmp_len(s, t, i));
+  if (t_strcmp_len(t, s, 4) != 1)
+    g_print ("1 is expected, but t_strcmp_len returned %d.\n", t_strcmp_len(t, s, i));
+}
+
 static void
 test_csv_write (void) {
   GListStore *liststore;
@@ -270,6 +304,7 @@ test_csv_write (void) {
     {"\"one\"", ", \"two\"", ", \"three\"", "and \"four\"\n"}
   };
   char *csv ="a,bc,def,\"gh\nij\"\n1,23,456,\"78\"\"90\"\n\"\"\"one\"\"\",\", \"\"two\"\"\",\", \"\"three\"\"\",\"and \"\"four\"\"\n\"\n";
+  int csv_len = strlen (csv);
   char *contents;
   size_t length;
 
@@ -292,10 +327,15 @@ test_csv_write (void) {
       g_print ("g_file_load_contents returns FALSE.\n");
       g_print ("%s\n", err->message);
       g_clear_error (&err);
-    } else if (strcmp (csv, contents) != 0) {
+    } else if (length != csv_len) {
+      g_print ("Size of contents isn't strlen(csv).\n");
+      g_print ("csv_write might write EOS ('\\0') to the file.\n");
+      g_print ("Size of contents is %ld\n", length);
+      g_print ("strlen(csv) = %d\n", csv_len);
+    } else if (t_strcmp_len (csv, contents, length) != 0) {
       g_print ("Csv write error. (The contents of the csv file is different from what is expected.)\n");
-      g_print ("Expected contents are \'%s\'.\n", csv);
-      g_print ("The returned contents are \'%s\'.\n", contents);
+      g_print ("Expected contents are '%s'.\n", csv);
+      g_print ("The returned contents are '%s'.\n", contents);
     }
     g_free (contents);
     err = NULL;
@@ -310,6 +350,8 @@ test_csv_write (void) {
 
 int
 main (int argc, char **argv) {
+  g_print ("Self test -- t_strcmp_len\n");
+  test_t_strcmp_len ();
   g_print ("Test csv_real_validate.\n");
   test_csv_real_validate ();
   g_print ("Test csv_real_read.\n");

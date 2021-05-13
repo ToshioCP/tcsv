@@ -55,7 +55,7 @@ get_string (GtkListItem *item, GtkStringList *stringlist, int i) {
     return NULL;
 }
 
-GBytes *
+static GBytes *
 get_bytes (int position) {
   char *data;
   gsize size;

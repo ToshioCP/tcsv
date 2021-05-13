@@ -1,12 +1,14 @@
 # .gitignore
 
 # Build directories
+_build
 csv_with_glib/_build
 csv_with_glib/test/_build
 csv_without_glib/_build
 csv_without_glib/test/_build
-temp
 test/_build
+
+temp
 
 # backup file
 *~

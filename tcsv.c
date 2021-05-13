@@ -200,7 +200,11 @@ csv_real_read (GListStore *liststore, const char *contents, size_t length, int n
     else
       input = 3;
 
-    if ((state == 1 || state == 4) && (input == 0 || input == 1 || input == 4)) {
+    if (state == 6 && input == 4)
+      break;
+
+    state = tbl[state][input]; /* Now, this is the state of current character */
+    if (state == 5 || state == 6 || state == 7) {
       if (i >= n_row) {
         g_error ("%s\n", csv_prog_error_message (record_overflow));
         if (stringlist)
@@ -220,8 +224,6 @@ csv_real_read (GListStore *liststore, const char *contents, size_t length, int n
         ++i;
       }
     }
-
-    state = tbl[state][input]; /* Now, this is the state of current character */
     if (state == 6) { /* NL */
       ++line;
       column = 1;
@@ -398,7 +400,7 @@ csv_write (GListStore *liststore, GFile *file, int n_row, int n_column, GError *
   contents = csv_real_write (liststore, n_row, n_column, &length, err);
   if (contents == NULL)
     return FALSE;
-  state = g_file_replace_contents (file, contents, length, NULL, FALSE, G_FILE_CREATE_NONE, NULL, NULL, err);
+  state = g_file_replace_contents (file, contents, length - 1, NULL, FALSE, G_FILE_CREATE_NONE, NULL, NULL, err);
   g_free (contents);
   return state;
 }
