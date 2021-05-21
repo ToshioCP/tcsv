@@ -2,7 +2,7 @@
 #define __TFE_CSS_H__
 
 void
-set_css (GtkWindow *win, char *css);
+set_css_for_display (GtkWindow *win, char *css);
 
 void
 set_font_for_display (GtkWindow *win, const char *fontfamily, const char *fontstyle, const char *fontweight, int size);

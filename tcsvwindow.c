@@ -4,10 +4,12 @@
 #include "tcsvpref.h"
 #include "tcsv.h"
 #include "css.h"
+#include "tcsvrecdialog.h"
 
 struct _TCsvWindow {
   GtkApplicationWindow parent;
   GtkColumnView *columnview;
+  GtkSingleSelection *singleselection;
   GtkSortListModel *sortlist;
   GListStore *liststore;
   GtkMenuButton *btnm;
@@ -49,6 +51,38 @@ before_close (GtkWindow *window, gpointer user_data) {
   return TRUE;
 }
 
+static gboolean busy = FALSE;
+
+static void
+rec_dialog_response_cb (TCsvRecDialog *rec_dialog, int response_id, gpointer user_data) {
+  TCsvWindow *win = t_csv_rec_dialog_get_window (rec_dialog);
+  int position = t_csv_rec_dialog_get_position (rec_dialog);
+  GtkStringList *s_array[2];
+
+  s_array[1] = NULL;
+  if (response_id == GTK_RESPONSE_ACCEPT) {
+    s_array[0] = t_csv_rec_dialog_get_string_list (rec_dialog);
+    g_list_store_splice (win->liststore, position, 1, (void **) s_array, 1);
+  }
+  gtk_window_destroy (GTK_WINDOW (rec_dialog));
+  busy = FALSE;
+}
+
+static void
+columnview_activate_cb (GtkColumnView *columnview, guint position, TCsvWindow *win) {
+  GtkWidget *rec_dialog;
+  GtkStringList *stringlist;
+
+  if (busy)
+    return;
+  else
+    busy = TRUE;
+  stringlist = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (win->liststore), position));
+  rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, stringlist, position);
+  g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), NULL);
+  gtk_widget_show (rec_dialog);
+}
+
 char *
 get_string0 (GtkStringList *stringlist, int i) {
   if (GTK_IS_STRING_LIST (stringlist))
@@ -73,6 +107,8 @@ get_bytes (int position) {
   "<template class='GtkListItem'>"
     "<property name='child'>"
       "<object class='GtkLabel'>"
+        "<property name='ellipsize'>PANGO_ELLIPSIZE_END</property>"
+        "<property name='width-chars'>16</property>"
         "<property name='hexpand'>TRUE</property>"
         "<property name='xalign'>0</property>"
         "<binding name='label'>"
@@ -201,9 +237,57 @@ t_csv_window_saveas (TCsvWindow *win) {
 
 /* ----- action activated handlers ----- */
 static void
-add_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) { }
+add_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+  int position = gtk_single_selection_get_selected (win->singleselection);
+  GtkStringList *stringlist = gtk_string_list_new (NULL);
+  int j;
+  GtkWidget *rec_dialog;
+
+  for (j=0; j<win->n_column; ++j)
+    gtk_string_list_append (stringlist, "");
+  if (position == GTK_INVALID_LIST_POSITION || position == win->n_row - 1)
+    g_list_store_append (win->liststore, stringlist);
+  else
+    g_list_store_insert (win->liststore, position + 1, stringlist);
+  ++win->n_row;
+
+  rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, stringlist, position + 1);
+  g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), NULL);
+  gtk_widget_show (rec_dialog);
+}
+
 static void
-remove_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) { }
+remove_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+  int position = gtk_single_selection_get_selected (win->singleselection);
+
+  if (position == GTK_INVALID_LIST_POSITION || win->n_row <= 0)
+    return;
+  g_list_store_remove (win->liststore, position);
+  --win->n_row;
+}
+
+static void
+insert_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+  int position = gtk_single_selection_get_selected (win->singleselection);
+  GtkStringList *stringlist = gtk_string_list_new (NULL);
+  int j;
+  GtkWidget *rec_dialog;
+
+  for (j=0; j<win->n_column; ++j)
+    gtk_string_list_append (stringlist, "");
+  if (position == GTK_INVALID_LIST_POSITION)
+    position = 0;
+  g_list_store_insert (win->liststore, position, stringlist);
+  ++win->n_row;
+
+  rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, stringlist, position);
+  g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), NULL);
+  gtk_widget_show (rec_dialog);
+}
+
 static void
 add_field_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) { }
 static void
@@ -294,6 +378,11 @@ changed_font_cb (GSettings *settings, char *key, gpointer user_data) {
   set_font_for_display_with_pango_font_desc (win, pango_font_desc);
 }
 
+GtkStringList *
+t_csv_window_get_header (TCsvWindow *win) {
+  return win->header;
+}
+
 /* --- TCsvWindow object construction/destruction --- */ 
 static void
 t_csv_window_init (TCsvWindow *win) {
@@ -311,6 +400,8 @@ t_csv_window_init (TCsvWindow *win) {
   menu = G_MENU_MODEL (gtk_builder_get_object (build, "menu"));
   gtk_menu_button_set_menu_model (win->btnm, menu);
   g_object_unref(build);
+  win->liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  gtk_sort_list_model_set_model (win->sortlist, G_LIST_MODEL (win->liststore));
 
   win->settings = g_settings_new ("com.github.ToshioCP.tcsv");
   g_signal_connect (win->settings, "changed::font", G_CALLBACK (changed_font_cb), win);
@@ -320,6 +411,7 @@ t_csv_window_init (TCsvWindow *win) {
   const GActionEntry win_entries[] = {
     { "addrec", add_record_activated, NULL, NULL, NULL },
     { "rmrec", remove_record_activated, NULL, NULL, NULL },
+    { "insrec", insert_record_activated, NULL, NULL, NULL },
     { "addfld", add_field_activated, NULL, NULL, NULL },
     { "rmfld", remove_field_activated, NULL, NULL, NULL },
     { "open", open_activated, NULL, NULL, NULL },
@@ -332,6 +424,7 @@ t_csv_window_init (TCsvWindow *win) {
   g_action_map_add_action_entries (G_ACTION_MAP (win), win_entries, G_N_ELEMENTS (win_entries), win);
 
   g_signal_connect (win, "close-request", G_CALLBACK (before_close), NULL);
+  g_signal_connect (win->columnview, "activate", G_CALLBACK (columnview_activate_cb), win);
 }
 
 static void
@@ -340,8 +433,8 @@ t_csv_window_class_init (TCsvWindowClass *class) {
 
   gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (class), "/com/github/ToshioCP/tcsv/tcsvwindow.ui");
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, columnview);
+  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, singleselection);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, sortlist);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, liststore);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, btnm);
 }
 

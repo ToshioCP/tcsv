@@ -1,10 +1,13 @@
-#ifndef __T_CSVE_WINDOW_H__
+#ifndef __T_CSV_WINDOW_H__
 #define __T_CSV_WINDOW_H__
 
 #include <gtk/gtk.h>
 
 #define T_TYPE_CSV_WINDOW t_csv_window_get_type ()
 G_DECLARE_FINAL_TYPE (TCsvWindow, t_csv_window, T, CSV_WINDOW, GtkApplicationWindow)
+
+GtkStringList *
+t_csv_window_get_header (TCsvWindow *win);
 
 GtkWidget *
 t_csv_window_new_with_file (GtkApplication *app, GFile *file);

@@ -3,6 +3,12 @@
   <menu id="menu">
     <section>
       <item>
+        <attribute name="label">Insert Record</attribute>
+        <attribute name="action">win.insrec</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
         <attribute name="label">Add field</attribute>
         <attribute name="action">win.addfld</attribute>
       </item>

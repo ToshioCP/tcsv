@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="TCsvRecDialog" parent="GtkDialog">
+    <property name="title">Record editor</property>
+    <property name="default-width">1000</property>
+    <property name="default-height">800</property>
+    <child internal-child="content_area">
+      <object class="GtkScrolledWindow">
+        <property name="margin-start">10</property>
+        <property name="margin-end">10</property>
+        <property name="margin-top">10</property>
+        <property name="margin-bottom">10</property>
+        <property name="hexpand">TRUE</property>
+        <property name="vexpand">TRUE</property>
+        <child>
+          <object class="GtkColumnView" id="columnview">
+            <property name="hexpand">TRUE</property>
+            <property name="vexpand">TRUE</property>
+            <property name="model">
+              <object class="GtkNoSelection" id="noselection"></object>
+            </property>
+            <child>
+              <object class="GtkColumnViewColumn">
+                <property name="title">Header</property>
+                <property name="factory">
+                  <object class="GtkBuilderListItemFactory">
+                    <property name="bytes"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkLabel">
+        <property name="xalign">0</property>
+        <binding name="label">
+          <lookup name="first-string" type="TCouple">
+            <lookup name="item">GtkListItem</lookup>
+          </lookup>
+        </binding>
+      </object>
+    </property>
+  </template>
+</interface>
+                    ]]></property>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkColumnViewColumn" id="column2">
+                <property name="title">Record</property>
+                <property name="expand">TRUE</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child type="action">
+      <object class="GtkButton" id="btn_cancel">
+        <property name="label">Cancel</property>
+      </object>
+    </child>
+    <child type="action">
+      <object class="GtkButton" id="btn_accept">
+        <property name="label">Save</property>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="cancel">btn_cancel</action-widget>
+      <action-widget response="accept" default="true">btn_accept</action-widget>
+    </action-widgets>
+  </template>
+</interface>
+

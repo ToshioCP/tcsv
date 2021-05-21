@@ -89,6 +89,65 @@ and 6"
 Fields can be surrounded by double quotes.
 This type of field can include commas, NLs and pairs of double quotes.
 
+## Manual of tcsv
+
+### Compile
+
+Prerequisite.
+
+- Linux operationg system.
+- gcc
+- Gtk4
+- Glib-2.0 version 2.68.0 or higher
+
+Compiling.
+
+1. Download and decompress the files from this repository.
+2. Change your current directory to the top directory of the files above.
+3. Type `meson _build`
+4. Type `ninja -C _build`
+
+The executable file `tcsv` is created in `_build` directory.
+
+~~~
+$ _build/tcsv
+~~~
+
+or
+
+~~~
+$ _build/tcsv <csv file>
+~~~
+
+### Read/write csv
+
+- Click on `Open` button, then you can read a csv file.
+- Click on `Save` button, then you can overwrite the csv file which you've read.
+- Click on hamberger menu and select `Save as`, then you can write your csv data with a file name.
+
+### Edit the file
+
+- Click on a record, then you can select the record.
+Type enter key, then a dialog appears.
+You can double click the record as well to show the dialog.
+- The dialog has two columns.
+The first column contains the header of the csv.
+The second column contains the selected record.
+- The second column can be editied.
+You need to press enter key after the modification of the cell.
+If you don't press enter, the data will be lost.
+- Press `Save` button, then the data are copied to the selected record.
+If you press `Cancel`, then the data will be lost.
+
+### Preference
+
+There's a preference menu.
+You can change the font.
+
+### TODO
+
+`Add field` and `Remove field` menu doesn't work now.
+
 ## Validation -- the state matrix for CSV
 
 ### UTF-8
@@ -249,8 +308,7 @@ If your glib version is lower than 2.68, it is impossible to compile this progra
 This program is in development.
 It is expected to have the following features in the near future.
 
-- Set appropriate width in each column.
-- Upgrade to a csv editor.
+- Add/delete fields.
 
 The followings are ideas and probably won't be implemented soon.
 

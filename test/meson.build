@@ -9,6 +9,7 @@ run_command ('cp', '../com.github.ToshioCP.tcsv.gschema.xml', 'com.github.Toshio
 gnome.compile_schemas(build_by_default: true, depend_files: 'com.github.ToshioCP.tcsv.gschema.xml')
 
 executable('test_csv', 'test_tcsv.c', dependencies: gtkdep, export_dynamic: true, install: false)
-win_sourcefiles = files('test_tcsvwindow.c', '../tcsvalert.c', '../tcsvpref.c', '../tcsv.c', '../css.c')
+win_sourcefiles = files('test_tcsvwindow.c', '../tcsvalert.c', '../tcsvpref.c', '../tcsv.c', '../css.c', '../tcsvrecdialog.c')
 executable('test_win', win_sourcefiles, resources, dependencies: gtkdep, export_dynamic: true, install: false)
+executable('test_dialog', 'test_tcsvrecdialog.c', resources, dependencies: gtkdep, export_dynamic: true, install: false)
 
