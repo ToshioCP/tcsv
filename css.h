@@ -2,6 +2,9 @@
 #define __TFE_CSS_H__
 
 void
+set_css_for_context (GtkStyleContext *context, char *css);
+
+void
 set_css_for_display (GtkWindow *win, char *css);
 
 void

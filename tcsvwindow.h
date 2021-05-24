@@ -6,7 +6,7 @@
 #define T_TYPE_CSV_WINDOW t_csv_window_get_type ()
 G_DECLARE_FINAL_TYPE (TCsvWindow, t_csv_window, T, CSV_WINDOW, GtkApplicationWindow)
 
-GtkStringList *
+GListStore *
 t_csv_window_get_header (TCsvWindow *win);
 
 GtkWidget *

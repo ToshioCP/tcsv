@@ -9,15 +9,15 @@
     </section>
     <section>
       <item>
-        <attribute name="label">Add field</attribute>
-        <attribute name="action">win.addfld</attribute>
-      </item>
-      <item>
-        <attribute name="label">Remove field</attribute>
-        <attribute name="action">win.rmfld</attribute>
+        <attribute name="label">Modify field</attribute>
+        <attribute name="action">win.modify-field</attribute>
       </item>
     </section>
     <section>
+      <item>
+        <attribute name="label">New</attribute>
+        <attribute name="action">win.new</attribute>
+      </item>
       <item>
         <attribute name="label">Save As…</attribute>
         <attribute name="action">win.saveas</attribute>

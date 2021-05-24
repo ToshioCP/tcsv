@@ -2,13 +2,20 @@
 #include <gtk/gtk.h>
 
 void
+set_css_for_context (GtkStyleContext *context, char *css) {
+  GtkCssProvider *provider = gtk_css_provider_new ();
+  gtk_css_provider_load_from_data (provider, css, -1);
+  gtk_style_context_add_provider (context, GTK_STYLE_PROVIDER (provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+}
+
+void
 set_css_for_display (GtkWindow *win, char *css) {
   GdkDisplay *display;
 
   display = gtk_widget_get_display (GTK_WIDGET (win));
   GtkCssProvider *provider = gtk_css_provider_new ();
   gtk_css_provider_load_from_data (provider, css, -1);
-  gtk_style_context_add_provider_for_display (display, GTK_STYLE_PROVIDER (provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+  gtk_style_context_add_provider_for_display (display, GTK_STYLE_PROVIDER (provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 void

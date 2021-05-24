@@ -31,8 +31,7 @@ app_startup (GApplication *application) {
   } action_accels[] = {
     { "win.addrec", { "<Control>e", NULL } },
     { "win.rmrec", { "<Control>r", NULL } },
-    { "win.addfld", { "<Shift><Control>e", NULL } },
-    { "win.rmfld", { "<Shift><Control>r", NULL } },
+    { "win.new", { "<Control>n", NULL } },
     { "win.open", { "<Control>o", NULL } },
     { "win.save", { "<Control>s", NULL } },
     { "win.close", { "<Control>w", NULL } },
