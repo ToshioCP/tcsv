@@ -6,6 +6,7 @@
     <file>tcsvalert.ui</file>
     <file>tcsvpref.ui</file>
     <file>tcsvrecdialog.ui</file>
-    <file>tcsvflddialog.ui</file>
+    <file>tcsvnewdialog.ui</file>
+    <file>tcsvmoddialog.ui</file>
   </gresource>
 </gresources>

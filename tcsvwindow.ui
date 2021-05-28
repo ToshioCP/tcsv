@@ -17,8 +17,8 @@
             </child>
             <child>
               <object class="GtkButton" id="btnar">
-                <property name="label">Add Record</property>
-                <property name="action-name">win.addrec</property>
+                <property name="label">Append Record</property>
+                <property name="action-name">win.apprec</property>
               </object>
             </child>
             <child>

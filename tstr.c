@@ -72,6 +72,11 @@ t_str_get_string (TStr *self) {
   return g_strdup (self->string);
 }
 
+char *
+t_str_look_string (TStr *self) {
+  return self->string;
+}
+
 /* create a new TStr instance */
 TStr *
 t_str_new_with_string (const char *s) {

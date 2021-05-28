@@ -29,7 +29,7 @@ app_startup (GApplication *application) {
     const char *action;
     const char *accels[2];
   } action_accels[] = {
-    { "win.addrec", { "<Control>e", NULL } },
+    { "win.apprec", { "<Control>e", NULL } },
     { "win.rmrec", { "<Control>r", NULL } },
     { "win.new", { "<Control>n", NULL } },
     { "win.open", { "<Control>o", NULL } },

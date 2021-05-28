@@ -13,6 +13,9 @@ t_str_set_string (TStr *self, const char *s);
 char *
 t_str_get_string (TStr *self);
 
+char *
+t_str_look_string (TStr *self);
+
 /* create a new TStr instance */
 TStr *
 t_str_new_with_string (const char *s);

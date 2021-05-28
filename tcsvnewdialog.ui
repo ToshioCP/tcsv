@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="TCsvNewDialog" parent="GtkDialog">
+    <property name="title">Define new fields</property>
+    <property name="default-width">600</property>
+    <property name="default-height">800</property>
+    <child internal-child="content_area">
+      <object class="GtkBox">
+        <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+        <child>
+          <object class="GtkBox">
+            <child>
+              <object class="GtkLabel" id="dmy1">
+                <property name="width-chars">10</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnins">
+                <property name="label">Insert Field</property>
+                <signal name="clicked" handler="ins_cb"></signal>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnapp">
+                <property name="label">Append Field</property>
+                <signal name="clicked" handler="app_cb"></signal>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnrm">
+                <property name="label">Remove Field</property>
+                <signal name="clicked" handler="rm_cb"></signal>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="dmy2">
+                <property name="hexpand">TRUE</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow">
+            <property name="margin-start">10</property>
+            <property name="margin-end">10</property>
+            <property name="margin-bottom">10</property>
+            <property name="hexpand">TRUE</property>
+            <property name="vexpand">TRUE</property>
+            <child>
+              <object class="GtkColumnView" id="columnview">
+                <property name="hexpand">TRUE</property>
+                <property name="vexpand">TRUE</property>
+                <property name="model">
+                  <object class="GtkNoSelection" id="noselection">
+                    <property name="model">
+                      <object class="GListStore" id="liststore"></object>
+                    </property>
+                  </object>
+                </property>
+              <child>
+                <object class="GtkColumnViewColumn" id="column1">
+                  <property name="title">No</property>
+<!--
+                  <property name="factory">
+                    <object class="GtkBuilderListItemFactory">
+                      <property name="bytes"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkButton">
+        <binding name="css-classes">
+          <closure type="GStrv" function="get_css_class">
+            <constant type="gchararray">field-number</constant>
+          </closure>
+        </binding>
+        <binding name="label">
+          <lookup name="position">GtkListItem</lookup>
+        </binding>
+        <signal name="clicked" handler="field_selected_cb"></signal>
+      </object>
+    </property>
+  </template>
+</interface>
+                      ]]></property>
+                    </object>
+                  </property>
+-->
+                </object>
+              </child>
+              <child>
+                <object class="GtkColumnViewColumn" id="column2">
+                  <property name="title">Field</property>
+                  <property name="expand">TRUE</property>
+                </object>
+              </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child type="action">
+      <object class="GtkButton" id="btn_cancel">
+        <property name="label">Cancel</property>
+      </object>
+    </child>
+    <child type="action">
+      <object class="GtkButton" id="btn_accept">
+        <property name="label">Save</property>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="cancel">btn_cancel</action-widget>
+      <action-widget response="accept" default="true">btn_accept</action-widget>
+    </action-widgets>
+  </template>
+</interface>
+

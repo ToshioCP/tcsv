@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="TCsvFldDialog" parent="GtkDialog">
-    <property name="title">Field editor</property>
-    <property name="default-width">600</property>
+  <template class="TCsvModDialog" parent="GtkDialog">
+    <property name="title">Modify fields</property>
+    <property name="default-width">1000</property>
     <property name="default-height">800</property>
     <child internal-child="content_area">
       <object class="GtkBox">
@@ -17,19 +17,19 @@
             <child>
               <object class="GtkButton" id="btnins">
                 <property name="label">Insert Field</property>
-                <signal name="clicked" handler="ins_cb"></signal>
+                <signal name="clicked" handler="mod_ins_cb"></signal>
               </object>
             </child>
             <child>
               <object class="GtkButton" id="btnapp">
                 <property name="label">Append Field</property>
-                <signal name="clicked" handler="app_cb"></signal>
+                <signal name="clicked" handler="mod_app_cb"></signal>
               </object>
             </child>
             <child>
               <object class="GtkButton" id="btnrm">
                 <property name="label">Remove Field</property>
-                <signal name="clicked" handler="rm_cb"></signal>
+                <signal name="clicked" handler="mod_rm_cb"></signal>
               </object>
             </child>
             <child>
@@ -59,8 +59,12 @@
                 </property>
               <child>
                 <object class="GtkColumnViewColumn" id="column1">
-                  <property name="title">No</property>
-<!--
+                  <property name="title">Position</property>
+                </object>
+              </child>
+              <child>
+                <object class="GtkColumnViewColumn" id="column2">
+                  <property name="title">Old field</property>
                   <property name="factory">
                     <object class="GtkBuilderListItemFactory">
                       <property name="bytes"><![CDATA[
@@ -68,16 +72,18 @@
 <interface>
   <template class="GtkListItem">
     <property name="child">
-      <object class="GtkButton">
+      <object class="GtkLabel">
         <binding name="css-classes">
           <closure type="GStrv" function="get_css_class">
-            <constant type="gchararray">field-number</constant>
+            <constant type="gchararray">header</constant>
           </closure>
         </binding>
+        <property name="focusable">FALSE</property>
         <binding name="label">
-          <lookup name="position">GtkListItem</lookup>
+          <lookup name="old-field" type="TModify">
+            <lookup name="item">GtkListItem</lookup>
+          </lookup>
         </binding>
-        <signal name="clicked" handler="field_selected_cb"></signal>
       </object>
     </property>
   </template>
@@ -85,15 +91,46 @@
                       ]]></property>
                     </object>
                   </property>
--->
                 </object>
               </child>
               <child>
-                <object class="GtkColumnViewColumn" id="column2">
-                  <property name="title">Field</property>
+                <object class="GtkColumnViewColumn" id="column3">
+                  <property name="title">State</property>
+                  <property name="factory">
+                    <object class="GtkBuilderListItemFactory">
+                      <property name="bytes"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkLabel">
+        <property name="focusable">FALSE</property>
+        <binding name="label">
+          <closure type="gchararray" function="get_state">
+            <lookup name="old-field" type="TModify">
+              <lookup name="item">GtkListItem</lookup>
+            </lookup>
+            <lookup name="new-field" type="TModify">
+              <lookup name="item">GtkListItem</lookup>
+            </lookup>
+          </closure>
+        </binding>
+      </object>
+    </property>
+  </template>
+</interface>
+                      ]]></property>
+                    </object>
+                  </property>
+                </object>
+              </child>
+              <child>
+                <object class="GtkColumnViewColumn" id="column4">
+                  <property name="title">New field</property>
                   <property name="expand">TRUE</property>
                 </object>
               </child>
+
               </object>
             </child>
           </object>
