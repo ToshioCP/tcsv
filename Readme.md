@@ -1,28 +1,43 @@
-# Csv file viewer
+# tcsv -- Csv file Editor
 
-## Development mode, license
+## What is this?
 
-The program in this repository is in a development mode and unstable.
+`tcsv` is a csv file editor.
+Csv file is a comma separated two dimensional text file.
+There's a detailed explanation in [doc.md](doc.md).
 
-It is free; you can redistribute it and/or modify it under the terms of the GNU General Public License
+- The first line is a header.
+- Each element delimited by commas are called field.
+Each line has the same number of fields.
+- The second line and after are called records.
+
+'tcsv' can show a csv file as a two dimensional table.
+It can edit a record.
+It can restructure the fields.
+For further information, see [doc.md](doc.md).
+
+![Screen Shot](Screenshot.png)
+
+## License
+
+TCsv is free; you can redistribute it and/or modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
 It is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) for more details.
 
-## About the program in this repository
+## Feature
 
-`tcsv` is a csv file viewer.
-It uses GTK4.
-The main widget is GtkColumnView.
-It is a widget newly added to GTK4.
+- Uses GTK4 and the main widget is GtkColumnView.
+- Reads/writes a csv file.
+- Edits a record of the csv data.
+- Creates a new csv file.
+- Changes the fields of a csv data.
 
-`tcsv` has its own csv read/write functions.
+## Document
 
-## Documentation
-
-There's a [document (`doc.md`)](doc.md) in the top directory of this repository.
+- [Document](doc.md)
 
 ## Compile
 
@@ -31,17 +46,17 @@ Prerequisites.
 - Gtk4
 - Glib 2.68.0 or later
 
-Compiling.
+Compiling and installation.
 
 ~~~
 $ meson _build
 $ ninja -C _build
+$ sudo ninja -C _build install
 ~~~
 
-Running.
+Execution.
 
 ~~~
-$ _build/tcsv
+$ tcsv
 ~~~
 
-No installation is supported now because of the development version.

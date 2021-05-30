@@ -57,6 +57,11 @@ get_string0 (GListStore *record, int j) {
   return s;
 }
 
+int
+inc (GtkListItem *item, int position) {
+  return position + 1;
+}
+
 char *
 get_string (GtkListItem *item, GListStore *record, int j) {
   return get_string0 (record, j);
@@ -93,19 +98,38 @@ get_bytes (int position) {
   return g_bytes_new_take (data, size);
 }
 
+static void
+build_columns (TCsvWindow *win) {
+  int j;
+  GtkListItemFactory *factory;
+  TStr *str;
+  char *s;
+  GtkColumnViewColumn *column;
+  GtkExpression *params[1];
+  GtkExpression *expression;
+  GtkSorter *sorter;
+
+  for (j=0; j<win->n_column; ++j) {
+    factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
+    str = g_list_model_get_item (G_LIST_MODEL (win->header), j);
+    s = t_str_look_string (str);
+    column = gtk_column_view_column_new (s, factory);
+    g_object_unref (str);
+ 
+    params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
+    expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (get_string0), NULL, NULL);
+    sorter = GTK_SORTER (gtk_string_sorter_new (expression));
+    gtk_column_view_column_set_sorter (column, sorter);
+
+    gtk_column_view_append_column (win->columnview, column);
+  }
+}
+
 /* Read/write csv file functions. When read it, the function builds listmodel and columnview */
 static void
 t_csv_window_read (TCsvWindow *win, GFile *file) {
   GtkWidget *message_dialog;
   GError *err = NULL;
-  GtkColumnViewColumn *column;
-  GtkListItemFactory *factory;
-  GtkSorter *sorter;
-  GtkExpression *params[1];
-  GtkExpression *expression;
-  int j;
-  TStr *str;
-  char *s;
 
   if (! csv_read (win->liststore, file, &win->n_row, &win->n_column, &err)) {
     message_dialog = gtk_message_dialog_new (GTK_WINDOW (win), GTK_DIALOG_MODAL,
@@ -120,20 +144,7 @@ t_csv_window_read (TCsvWindow *win, GFile *file) {
   win->header = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (win->liststore), 0));
   g_list_store_remove (win->liststore, 0);
   --win->n_row;
-  for (j=0; j<win->n_column; ++j) {
-    factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
-    str = T_STR (g_list_model_get_item (G_LIST_MODEL (win->header), j));
-    s = t_str_look_string (str);
-    column = gtk_column_view_column_new (s, factory);
-    g_object_unref (str);
- 
-    params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
-    expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (get_string0), NULL, NULL);
-    sorter = GTK_SORTER (gtk_string_sorter_new (expression));
-    gtk_column_view_column_set_sorter (column, sorter);
-
-    gtk_column_view_append_column (win->columnview, column);
-  }
+  build_columns (win);
 }
 
 static gboolean save_busy = FALSE;
@@ -166,7 +177,7 @@ rec_dialog_response_cb (TCsvRecDialog *rec_dialog, int response_id, gpointer use
   int position = t_csv_rec_dialog_get_position (rec_dialog);
   GListStore *s_array[1];
 
-  if (response_id == GTK_RESPONSE_ACCEPT) {
+  if (response_id == GTK_RESPONSE_ACCEPT && position >= 0 && position < g_list_model_get_n_items (G_LIST_MODEL (win->liststore))) {
     s_array[0] = t_csv_rec_dialog_get_record (rec_dialog);
     g_list_store_splice (win->liststore, position, 1, (void **) s_array, 1);
   }
@@ -201,8 +212,10 @@ append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   if (win->n_column <= 0)
     return;
   position = gtk_single_selection_get_selected (win->singleselection);
-  if (position == GTK_INVALID_LIST_POSITION)
+  if (position == GTK_INVALID_LIST_POSITION && win->n_row > 0)
     return;
+  if (win->n_row == 0)
+    position = -1;
   record = create_new_record (win);
   g_list_store_insert (win->liststore, position + 1, record);
   ++win->n_row;
@@ -379,12 +392,7 @@ mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response_id, gpointer use
   new_field_config *config;
   int i, n_row, j, n_items;
   TStr *str;
-  char *s;
   GtkColumnViewColumn *column;
-  GtkListItemFactory *factory;
-  GtkSorter *sorter;
-  GtkExpression *params[1];
-  GtkExpression *expression;
   GListModel *columns;
 
   if (response_id == GTK_RESPONSE_ACCEPT) {
@@ -430,20 +438,7 @@ mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response_id, gpointer use
     win->saved = FALSE;
 
     n_items = g_list_model_get_n_items (G_LIST_MODEL (win->header));
-    for (j=0; j<win->n_column; ++j) {
-      factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
-      str = g_list_model_get_item (G_LIST_MODEL (win->header), j);
-      s = t_str_look_string (str);
-      column = gtk_column_view_column_new (s, factory);
-      g_object_unref (str);
- 
-      params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
-      expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (get_string0), NULL, NULL);
-      sorter = GTK_SORTER (gtk_string_sorter_new (expression));
-      gtk_column_view_column_set_sorter (column, sorter);
-
-      gtk_column_view_append_column (win->columnview, column);
-    }
+    build_columns (win);
   }
   gtk_window_destroy (GTK_WINDOW (mod_dialog));
   mod_busy = FALSE;
@@ -466,20 +461,19 @@ modify_field_activated (GSimpleAction *action, GVariant *parameter, gpointer use
   gtk_widget_show (mod_dialog);
 }
 
+static void
+reset_sort_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+
+  gtk_column_view_sort_by_column (win->columnview, NULL, GTK_SORT_ASCENDING);
+}
+
 static gboolean new_busy = FALSE;
 
 static void
 new_dialog_response_cb (TCsvNewDialog *new_dialog, int response_id, gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (t_csv_new_dialog_get_window (new_dialog));
   GListStore *record;
-  GtkColumnViewColumn *column;
-  GtkListItemFactory *factory;
-  GtkSorter *sorter;
-  GtkExpression *params[1];
-  GtkExpression *expression;
-  int j;
-  TStr *str;
-  char *s;
 
   if (response_id == GTK_RESPONSE_ACCEPT) {
     win->header = t_csv_new_dialog_get_record (new_dialog);
@@ -490,20 +484,7 @@ new_dialog_response_cb (TCsvNewDialog *new_dialog, int response_id, gpointer use
     gtk_single_selection_set_selected (win->singleselection, 0);
     win->file = NULL;
     win->saved = FALSE;
-    for (j=0; j<win->n_column; ++j) {
-      factory = gtk_builder_list_item_factory_new_from_bytes (NULL, get_bytes (j));
-      str = g_list_model_get_item (G_LIST_MODEL (win->header), j);
-      s = t_str_look_string (str);
-      column = gtk_column_view_column_new (s, factory);
-      g_object_unref (str);
- 
-      params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
-      expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (get_string0), NULL, NULL);
-      sorter = GTK_SORTER (gtk_string_sorter_new (expression));
-      gtk_column_view_column_set_sorter (column, sorter);
-
-      gtk_column_view_append_column (win->columnview, column);
-    }
+    build_columns (win);
   }
   gtk_window_destroy (GTK_WINDOW (new_dialog));
   new_busy = FALSE;
@@ -626,6 +607,7 @@ t_csv_window_init (TCsvWindow *win) {
     { "rmrec", remove_record_activated, NULL, NULL, NULL },
     { "insrec", insert_record_activated, NULL, NULL, NULL },
     { "modify-field", modify_field_activated, NULL, NULL, NULL },
+    { "reset-sort", reset_sort_activated, NULL, NULL, NULL },
     { "new", new_activated, NULL, NULL, NULL },
     { "open", open_activated, NULL, NULL, NULL },
     { "save", save_activated, NULL, NULL, NULL },

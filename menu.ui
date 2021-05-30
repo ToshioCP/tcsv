@@ -9,8 +9,14 @@
     </section>
     <section>
       <item>
-        <attribute name="label">Modify field</attribute>
+        <attribute name="label">Modify Fields</attribute>
         <attribute name="action">win.modify-field</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label">Reset Sorting</attribute>
+        <attribute name="action">win.reset-sort</attribute>
       </item>
     </section>
     <section>

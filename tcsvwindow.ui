@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <template class="TCsvWindow" parent="GtkApplicationWindow">
-    <property name="title">Csv viewerr</property>
+    <property name="title">Csv editor</property>
     <property name="default-width">1200</property>
     <property name="default-height">800</property>
     <child>

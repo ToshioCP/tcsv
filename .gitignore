@@ -12,3 +12,4 @@ temp
 
 # backup file
 *~
+*.bak

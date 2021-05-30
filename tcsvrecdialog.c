@@ -106,28 +106,28 @@ t_couple_set_second_string (TCouple *self, const char *s2) {
 
 char *
 t_couple_get_first_string (TCouple *self) {
-  g_return_if_fail (T_IS_COUPLE (self));
+  g_return_val_if_fail (T_IS_COUPLE (self), NULL);
 
   return g_strdup (self->s1);
 }
 
 char *
 t_couple_get_second_string (TCouple *self) {
-  g_return_if_fail (T_IS_COUPLE (self));
+  g_return_val_if_fail (T_IS_COUPLE (self), NULL);
 
   return g_strdup (self->s2);
 }
 
 char *
 t_couple_look_first_string (TCouple *self) {
-  g_return_if_fail (T_IS_COUPLE (self));
+  g_return_val_if_fail (T_IS_COUPLE (self), NULL);
 
   return self->s1;
 }
 
 char *
 t_couple_look_second_string (TCouple *self) {
-  g_return_if_fail (T_IS_COUPLE (self));
+  g_return_val_if_fail (T_IS_COUPLE (self), NULL);
 
   return self->s2;
 }
@@ -151,6 +151,7 @@ struct _TCsvRecDialog
   GtkButton *btn_cancel;
   GtkWindow *win;
   int position;
+  GtkWidget *first_text;
 };
 
 G_DEFINE_TYPE (TCsvRecDialog, t_csv_rec_dialog, GTK_TYPE_DIALOG);
@@ -183,7 +184,7 @@ t_csv_rec_dialog_get_window (TCsvRecDialog *rec_dialog) {
 
 int
 t_csv_rec_dialog_get_position (TCsvRecDialog *rec_dialog) {
-  g_return_val_if_fail (T_IS_CSV_REC_DIALOG (rec_dialog), NULL);
+  g_return_val_if_fail (T_IS_CSV_REC_DIALOG (rec_dialog), -1);
 
   return rec_dialog->position;
 }
@@ -218,8 +219,11 @@ get_css_class (GtkListItem *listitem, char *css) {
 
 static void
 setup_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
+  TCsvRecDialog *rec_dialog = T_CSV_REC_DIALOG (user_data);
   GtkWidget *text = gtk_text_new ();
   gtk_list_item_set_child (listitem, text);
+  if (rec_dialog->first_text == NULL)
+    rec_dialog->first_text = text;
 }
 
 static void
@@ -256,11 +260,12 @@ t_csv_rec_dialog_init (TCsvRecDialog *rec_dialog) {
 
   GtkListItemFactory *factory = gtk_signal_list_item_factory_new ();
   gtk_column_view_column_set_factory (rec_dialog->column2, factory);
-  g_signal_connect (factory, "setup", G_CALLBACK (setup_cb), NULL);
+  g_signal_connect (factory, "setup", G_CALLBACK (setup_cb), rec_dialog);
   g_signal_connect (factory, "bind", G_CALLBACK (bind_cb), NULL);
   g_signal_connect (factory, "unbind", G_CALLBACK (unbind_cb), NULL);
   g_signal_connect (factory, "teardown", G_CALLBACK (teardown_cb), NULL);
   set_css_for_display (GTK_WINDOW (rec_dialog), "text:focus {border: 1px solid gray;} label.header {background: #e8e8e8;}");
+  rec_dialog->first_text = NULL;
 }
 
 static void
@@ -300,6 +305,8 @@ t_csv_rec_dialog_new (GtkWindow *win, GListStore *header, GListStore *record, in
   }
   rec_dialog->win = win;
   rec_dialog->position = position;
+  if (rec_dialog->first_text)
+    gtk_widget_grab_focus (GTK_WIDGET (rec_dialog->first_text));
 
   return GTK_WIDGET (rec_dialog);
 }

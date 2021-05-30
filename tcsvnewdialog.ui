@@ -52,40 +52,11 @@
                 <property name="vexpand">TRUE</property>
                 <property name="model">
                   <object class="GtkNoSelection" id="noselection">
-                    <property name="model">
-                      <object class="GListStore" id="liststore"></object>
-                    </property>
                   </object>
                 </property>
               <child>
                 <object class="GtkColumnViewColumn" id="column1">
                   <property name="title">No</property>
-<!--
-                  <property name="factory">
-                    <object class="GtkBuilderListItemFactory">
-                      <property name="bytes"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <template class="GtkListItem">
-    <property name="child">
-      <object class="GtkButton">
-        <binding name="css-classes">
-          <closure type="GStrv" function="get_css_class">
-            <constant type="gchararray">field-number</constant>
-          </closure>
-        </binding>
-        <binding name="label">
-          <lookup name="position">GtkListItem</lookup>
-        </binding>
-        <signal name="clicked" handler="field_selected_cb"></signal>
-      </object>
-    </property>
-  </template>
-</interface>
-                      ]]></property>
-                    </object>
-                  </property>
--->
                 </object>
               </child>
               <child>

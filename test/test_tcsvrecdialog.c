@@ -84,7 +84,7 @@ test_rec_dialog_new (void) {
       g_object_unref (couple);
     } 
   }
-  if (win != t_csv_rec_dialog_get_window (rec_dialog))
+  if (GTK_WINDOW (win) != t_csv_rec_dialog_get_window (rec_dialog))
     g_print ("The winodw dialog returned is wrong.\n");
   if (t_csv_rec_dialog_get_position (rec_dialog) != 0)
     g_print ("The position dialog returned is wrong.\n");

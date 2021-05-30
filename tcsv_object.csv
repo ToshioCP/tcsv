@@ -1,0 +1,13 @@
+Object name,Property,Type
+TStr,string,string
+TModify,position,int
+TModify,old-field,string
+TModify,new-field,string
+TCouple,first-string,string
+TCouple,second-string,string
+TCsvAlert,,
+TCsvPref,,
+TCsvRecDialog,,
+TCdvNewDialog,,
+TCsvModDialog,,
+TCsvWindow,,
