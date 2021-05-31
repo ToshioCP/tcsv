@@ -52,7 +52,7 @@ main (int argc, char **argv) {
   GtkApplication *app;
   int stat;
 
-  if (argc >1) {
+  if (argc > 2) {
     g_printerr ("Tcsv: too many arguments.\n");
     g_printerr ("Usage; tcsv [csv_file]\n");
     return 1;

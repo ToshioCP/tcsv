@@ -140,10 +140,11 @@ t_csv_window_read (TCsvWindow *win, GFile *file) {
     g_error_free (err);
     return;
   }
-  win->file = file;
+  win->file = g_object_ref (file);
   win->header = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (win->liststore), 0));
   g_list_store_remove (win->liststore, 0);
   --win->n_row;
+  win->saved = TRUE;
   build_columns (win);
 }
 
@@ -180,6 +181,7 @@ rec_dialog_response_cb (TCsvRecDialog *rec_dialog, int response_id, gpointer use
   if (response_id == GTK_RESPONSE_ACCEPT && position >= 0 && position < g_list_model_get_n_items (G_LIST_MODEL (win->liststore))) {
     s_array[0] = t_csv_rec_dialog_get_record (rec_dialog);
     g_list_store_splice (win->liststore, position, 1, (void **) s_array, 1);
+    win->saved = FALSE;
   }
   gtk_window_destroy (GTK_WINDOW (rec_dialog));
   rec_busy = FALSE;
@@ -219,6 +221,7 @@ append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   record = create_new_record (win);
   g_list_store_insert (win->liststore, position + 1, record);
   ++win->n_row;
+  win->saved = FALSE;
 
   rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, record, position + 1);
   g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), NULL);
@@ -234,6 +237,7 @@ remove_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
     return;
   g_list_store_remove (win->liststore, position);
   --win->n_row;
+  win->saved = FALSE;
 }
 
 static void
@@ -251,6 +255,7 @@ insert_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   record = create_new_record (win);
   g_list_store_insert (win->liststore, position, record);
   ++win->n_row;
+  win->saved = FALSE;
 
   rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, record, position);
   g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), NULL);
@@ -266,7 +271,7 @@ open_dialog_response(GtkWidget *dialog, gint response, TCsvWindow *win) {
   if (response == GTK_RESPONSE_ACCEPT
       && G_IS_FILE (file = gtk_file_chooser_get_file (GTK_FILE_CHOOSER (dialog)))) {
     t_csv_window_read (win, file);
-    /* file is taken to win->file, so don't unref it. */
+    g_object_unref (file);
     if (win->n_row >=1)
       gtk_single_selection_set_selected (win->singleselection, 0);
   }
