@@ -1,6 +1,5 @@
 #include <string.h>
 #include "tcsv.h"
-#include "tstr.h"
 
 /* program error */
 enum {
@@ -182,8 +181,7 @@ csv_real_read (GListStore *liststore, const char *contents, size_t length, int n
   int bi; /* buf index */
   int i, j;
   int line, column; /* the location of the current character */
-  GListStore *record = NULL;
-  TStr *str;
+  GtkStringList *record = NULL;
 
   i = j = 0;
   bi = 0;
@@ -216,11 +214,10 @@ csv_real_read (GListStore *liststore, const char *contents, size_t length, int n
       }
       buf[bi] = '\0';
       if (record == NULL) {
-        record = g_list_store_new (T_TYPE_STR);
+        record = gtk_string_list_new (NULL);
         g_list_store_append (liststore, record);
       }
-      str = t_str_new_with_string (buf);
-      g_list_store_append (record, str);
+      gtk_string_list_append (record, buf);
       bi = 0;
       if (++j >= n_column) {
         j = 0;
@@ -271,18 +268,16 @@ static char *
 csv_real_write (GListStore *liststore, int n_row, int n_column, size_t *length, GError **err) {
   char c;
   int i, j, n_nl, n_comma, n_quote;
-  char *s;
-  char *t, *csv, *pt;
-  GListStore *record;
-  TStr *str;
+  const char *s, *t;
+  char *csv, *pt;
+  GtkStringList *record;
 
   *length = 0;
   for (i=0; i<n_row; ++i)
     for (j=0; j<n_column; ++j) {
-      record = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), i));
-      if (G_IS_LIST_STORE (record)
-         && T_IS_STR (str = T_STR (g_list_model_get_item (G_LIST_MODEL (record), j)))
-         && (s = t_str_get_string (str)) != NULL) {
+      record = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i));
+      if (GTK_IS_STRING_LIST (record)
+         && (s = gtk_string_list_get_string (record, j)) != NULL) {
         for (t = s, n_nl = n_comma = n_quote = 0; *t; ++t) {
           if ((c = *t) == '\n')
             ++n_nl;
@@ -299,17 +294,13 @@ csv_real_write (GListStore *liststore, int n_row, int n_column, size_t *length, 
         t_csv_error_set_no_string (err, NULL);
         return NULL;
       }
-      if (s) g_free (s);
-      if (str) g_clear_object (&str);
     }
   ++(*length); /* EOS */
   csv = g_new0 (char, *length);
   for (i=0, pt=csv; i<n_row; ++i) {
     for (j=0; j<n_column; ++j) {
-      record = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), i));
-      if (G_IS_LIST_STORE (record)
-         && T_IS_STR (str = T_STR (g_list_model_get_item (G_LIST_MODEL (record), j)))
-         && (s = t_str_get_string (str)) != NULL) {
+      record = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i));
+      if ((s = gtk_string_list_get_string (record, j)) != NULL) {
         for (t = s, n_nl = n_comma = n_quote = 0; *t; ++t) {
           if ((c = *t) == '\n')
             ++n_nl;
@@ -346,8 +337,6 @@ csv_real_write (GListStore *liststore, int n_row, int n_column, size_t *length, 
         g_free (csv);
         return NULL;
       }
-      if (s) g_free (s);
-      if (str) g_clear_object (&str);
       g_object_unref (record);
     }
     if (pt > csv)

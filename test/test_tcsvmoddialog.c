@@ -1,36 +1,35 @@
 #include <gtk/gtk.h>
-#include "../tcsvrecdialog.h"
+#include "../tcsvmoddialog.h"
+#include "../tmodify.h"
 
+const char *s_header[4] = {"one", "two", "three", NULL};
 
 GtkWidget *
-create_rec_dialog (GtkWindow *win) {
+create_mod_dialog (GtkWindow *win) {
   const char *s_header[4] = {"one", "two", "three", NULL};
-  const char *s_record[4] = {"1", "2", "3", NULL};
   GtkStringList *header = gtk_string_list_new (s_header);
-  GtkStringList *record = gtk_string_list_new (s_record);
-  GtkWidget *rec_dialog = t_csv_rec_dialog_new (win, header, record, 0);
+  GtkWidget *mod_dialog = t_csv_mod_dialog_new (win, header);
   g_object_unref (header);
-  g_object_unref (record);
-  return rec_dialog;
+  return mod_dialog;
 }
 
-
 void
-rec_dialog_response_cb (TCsvRecDialog *rec_dialog, int response, gpointer user_data) {
-  int j, n_items;
-  GtkStringList *record;
+mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response, gpointer user_data) {
   GtkWindow *win = GTK_WINDOW (user_data);
+  int j, n_items;
+  GListStore *list_modify;
+  TModify *modify;
 
-  if (t_csv_rec_dialog_get_position (rec_dialog) != 0)
-    g_print ("The position dialog returned is wrong.\n");
-
-  record = t_csv_rec_dialog_get_record (rec_dialog);
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (record));
-  g_print ("The following is the string returned by the record dialog,\n\n");
-  for (j=0; j<n_items; ++j)
-    g_print ("%s\n", gtk_string_list_get_string (record, j));
-  g_object_unref (record);
-  gtk_window_destroy (GTK_WINDOW (rec_dialog));
+  list_modify = t_csv_mod_dialog_get_list_modify (mod_dialog);
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (list_modify));
+  g_print ("The following is returned by the modify dialog,\n\n");
+  for (j=0; j<n_items; ++j) {
+    modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (list_modify), j));
+    g_print ("%d, %s, %s\n",t_modify_get_old_position (modify), t_modify_look_old_string (modify), t_modify_look_new_string (modify));
+    g_object_unref (modify);
+  }
+  g_object_unref (list_modify);
+  gtk_window_destroy (GTK_WINDOW (mod_dialog));
   gtk_window_destroy (win);
 }
 
@@ -38,12 +37,12 @@ static void
 app_activate (GApplication *application) {
   GtkApplication *app = GTK_APPLICATION (application);
   GtkWidget *win;
-  GtkWidget *rec_dialog;
+  GtkWidget *mod_dialog;
 
   win = GTK_WIDGET (gtk_application_get_active_window(app));
-  rec_dialog = create_rec_dialog (GTK_WINDOW (win));
-  g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), win);
-  gtk_window_present (GTK_WINDOW (rec_dialog));
+  mod_dialog = create_mod_dialog (GTK_WINDOW (win));
+  g_signal_connect (mod_dialog, "response", G_CALLBACK (mod_dialog_response_cb), win);
+  gtk_window_present (GTK_WINDOW (mod_dialog));
 }
 
 static void
@@ -66,7 +65,7 @@ main (int argc, char **argv) {
   GtkApplication *app;
   int stat;
 
-  g_print ("Test TCsvRecDialog\n\n");
+  g_print ("Test TCsvModDialog\n\n");
   g_print ("Type strings into entries and click on save/cancel button.\n");
   g_print ("The strings will be printed below. Check them to be the same as you type.\n");
 

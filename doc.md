@@ -20,9 +20,9 @@ TCsv has a library `tcsv.c` which validates, reads and writes a csv file in term
 
 - The file consists of UTF-8 characters.
 - Each line ends with NL (New Line '\n').
-At the end of the file, the last line can end either with or without NL. 
+At the end of the file, the last line can end either with or without NL.
 - A line consists of fields.
-Fields are separated by comma (`,`).
+Fields are separated by commas (`,`).
 Lines have the same number of fields.
 - There are two types of fields.
 The one isn't surrounded by double quotes (`"`) and the other is surrounded by double quotes.
@@ -45,8 +45,9 @@ a, bc, def, ghi
 one, two, three, and "four".
 ~~~
 
-Fields are separated with comma.
-Any fields are not surrounded by double quote.
+Fields are separated with commas.
+Any fields are not surrounded by double quotes.
+(The last field is `and "four"`. It begins with 'a', not a double quote. So it is a B-field.)
 If a double quote is in the field, but not at the beginning of the field, it is recognized literally.
 
 ~~~
@@ -67,10 +68,10 @@ Prerequisites.
 
 - Linux operating system.
 - gcc
-- Gtk4
+- Gtk4 version 4.8 or higher
 - Glib-2.0 version 2.68.0 or higher
 
-Compiling and installation.
+Installation.
 
 1. Download and decompress the files from this repository.
 2. Change your current directory to the top directory of the files above.
@@ -84,12 +85,24 @@ Type `tcsv`, then `tcsv will be executed.
 $ tcsv
 ~~~
 
+If you want to install it in your user space, add `--prefix` option to meson.
+The following shows that the executable program is installed to `$HOME/.local/bin`.
+You don't need `sudo` because the installation target directory is in your user space.
+You may need to re-login.
+
+~~~
+$ meson --prefix=$HOME/.local _build
+$ ninja -C _build
+$ ninja -C _build install
+~~~
+
 ### Main window
 
 Execute `tcsv`.
 A main window appears.
 There's a title bar at the top of the window.
 It has title, minimize button, maximize/restore button and close button.
+(It depends on your windowing sysytem, though.)
 There's a tool bar below the title bar.
 It has six buttons.
 Two buttons `Append Record` and `Remove Record` are on the left.
@@ -107,8 +120,8 @@ They are less used than the buttons on the tool bar.
 - Click on `Save` button, then you can overwrite the csv file which you've read.
 - Click on the menu button and select `Save as`, then you can write your csv data with a file name.
 
-There's a sample csv file in the top directory of the source files.
-It is "tcsv_object.csv".
+There're sample csv files in the top directory of the source files.
+One of them is "tcsv_object.csv".
 Click on the `Open` button, then a file chooser dialog appears.
 Select "tcsv_object.csv", you might need to select the directory first, and click on `Open` button.
 Then, the contents of the file appears in the main window.
@@ -119,29 +132,29 @@ Click on the `Close` button, then the contents disappear.
 
 Csv data has rows and columns.
 The first row is a header.
-The second row or after is called record.
+The second row and after are called records.
 Each element is called a field.
 The columns are also called fields.
 
 If you read a csv file, the headers appear at the top of the table.
 Records are shown in the body of the table.
-If the number of records are more than the number of rows of the table, you can scroll it to look at the hidden records.
+If the number of records are more than the number of rows in the screen, you can scroll it to see hidden records.
 
 ### Create a new csv
 
 Click on the menu button and select `New` menu.
-Then "Define new fields" dialog appears.
+Then "Modify fields" dialog appears.
 
 There are three buttons on the tool bar.
 
-- `Insert Field`
-- `Append Field`
-- `Remove Field`
-
-Click on `Insert Field` or `Append Field`, then a button and a text entry appears.
-The label of the button is `0`.
-It shows the position of the row.
-The entry is focused so you can enter a character by typing your keyboard.
+- `Append new field`
+- `Insert new field before` followed by a GtkEntry. The number can be edited. Its default is zero.
+- `Clean`
+  
+Click on `Append new field`, then a new row is added to the end of the rows.
+Click on `Insert new field`, then a new row appears before the row that has a line number in the GtkEntry.
+The last column of the rows are entries (GtkText).
+You can enter characters from your keyboard.
 But only visible characters can be inputted.
 For example, you can't put NL (new line) into the buffer.
 
@@ -149,35 +162,28 @@ Type "field 1", for example.
 You need to put non-empty string to the entry.
 If the entry is empty, the field won't be added to the table in the main window.
 Then click on `Append Field` button twice.
-Two new rows appear.
+Two new rows appear.next to the row "field 1".
 Type "field 2" and "field 3" on the new two entries.
-
-The color of first and second button is white, and the third one is light blue.
-Light blue indicates that the row is selected.
-If you want to select the first row, click on the first button.
-The three buttons works with the selected row.
-
-- `Insert Field` inserts a row before the selected row.
-- `Append Field` inserts a row after the selected row.
-- `Remove Field` removes the selected row.
-
-If no row is selected, `Insert Field` button inserts a row at the position zero and `Append Field` button appends a row at the end of the rows.
+Now you mad three fields.
+If you want to remove "field 3", delete the text.
+Empty string makes no field.
 
 Click on the `Save` button at the bottom of the dialog, then the dialog disappears.
-Now, there is a header bar of the table in the main window.
-It has three fields, `field 1`, `field 2` and `field 3`.
+And the main window appears with fields you made.
+It has two fields, `field 1` and `field 2`.
+(The field `field 3` are deleted by you so it didn't appear on the main window.)
 
 ### Create/edit a record
 
 Double click the orange row or click on the row and press enter key, then the "Record Editor" dialog appears.
 There are two columns.
 "Header" and "Record".
-There are field names in the first column and their backgrounds are light gray.
+There are field names in the first column.
 The elements of the second column are text entries.
 Type something in the entries.
-For example, "one", "two" and "three".
-Click on the `Save` button, then the dialog disappears and there are three new data in the table in the main window.
-They're "one", "two" and "three which you have put in the entries in the dialog.
+For example, "one" and "two".
+Click on the `Save` button, then the dialog disappears and there are a new record in the table.
+They're "one" and "two" which you have put in the entries in the dialog.
 
 - If you click on a record, then the record is selected.
 The selected record is colored with orange.
@@ -199,7 +205,7 @@ Click on the "Close" button, then the contents disappear.
 
 Click on the "Open" button, select "example.csv" and click on the "Open" button, then the contents of "example.csv" appears again.
 There's one record.
-The contents of the record are "one", "two" and "three".
+The contents of the record are "one" and "two".
 
 ### Restructure fields
 
@@ -209,13 +215,26 @@ However, sometimes you need to change the fields later.
 You can restructure the fields by clicking `Modify Fields` menu.
 
 If you click the menu, "Modify Fields" dialog appears.
-It has four columns.
+It has seven columns.
 
-- Position: The position of the old field. This never changes even if rows are added or deleted.
+- Up: Moves the field (row) one up.
+- down: Move the field (row) one down.
+- Old position: The position of the old field. This never changes even if rows are added or deleted.
 - Old Field: The names of the old fields. They can't be modified.
 - State: There are three states, "Changed", "Added" and "Removed".
+- New position: The position of the new fields. This is the same as the positions of the rows.
 - New Field: The names of the new fields. They can be modified.
-If the name of a new field modified to be an empty string, the field will be removed.
+If the name of a new field is an empty string, the field will be removed.
+
+There are three buttons.
+
+- `Append new field`: This button creates a new field (row) and append it to the list.
+- `Insert new fField before` followed by a GtkEntry. The number can be edited. Its default is zero.
+This button inserts a new field (row) before the line (the entry's text is the line number).
+- `Clean`: If there is a line which has the following contents, they are removed.
+  - The old position is -1.
+  - The old field is an empty string.
+  - The new field is an empty string.
 
 Now, let's try to restructure fields of "example.csv".
 If your table in the main window is empty, click on the "Open" button and read "example,csv".
@@ -223,35 +242,34 @@ Then click on the `Modify Fields` menu.
 
 First, the "Modify Fields" dialog is as follows.
 
-|Position| Old field|State| New field|
-|:------:|:--------:|:---:|:--------:|
-|   0    | field 1  |     | field 1  |
-|   1    | field 2  |     | field 2  |
-|   2    | field 3  |     | field 3  |
+|Up|Down|Old position|Old field|State|New position|New field|
+|:-:|:-:|:----------:|:-------:|:---:|:----------:|:-------:|
+|↑|↓|     0        |field 1  |     |     0      | field 1 |
+|↑|↓|     1        |field 2  |     |     1      | field 2 |
 
 - Change "field 1" into "City".
-- Click the button labeled "0" and click on the `Append Field` button.
-Then, a new field is added after the field "City".
-- Fill in the new field with "Country".
-- Change "field 2" into "Population".
-- Change "field 3" into "Area".
+- Change "field 2" into "Country".
+- Click the `Append new field` button.
+Then, a new field is added at the bottom of the list.
+- Fill in the new field with "Population".
+- Click the `Append new field` button and append a new field.
+- Fill in the new field with "Area".
 
-|Position|Old field| State |New field |
-|:------:|:-------:|:-----:|:--------:|
-|   0    | field 1 |changed|   City   |
-|        |         | Added | Country  |
-|   1    | field 2 |changed|Population|
-|   2    | field 3 |changed|   Area   |
+|Up|Down|Old position|Old field| State |New position|New field |
+|:-:|:-:|:----------:|:-------:|:-----:|:----------:|:--------:|
+|↑|↓|     0        |field 1  |changed|     0      |   City   |
+|↑|↓|     1        |field 2  |changed|     1      | Country  |
+|↑|↓|    -1        |         |Added  |     2      |Population|
+|↑|↓|    -1        |         |Added  |     3      |   Area   |
 
-Now click on the `Save` button.
-
+Click on the `Save` button.
 The dialog disappears and the new fields appear on the header of the table in the main window.
 
 Edit the records.
 
 |      City       |Country|Population|Area|
 |:---------------:|:-----:|:--------:|:--:|
-|{Shinjuku (Tokyo)| Japan |  346235  | 18 |
+| Shinjuku (Tokyo)| Japan |  346235  | 18 |
 |      Osaka      | Japan | 2668586  |225 |
 |     London      |England| 8961989  |1572|
 |  New York City  |  USA  | 8175133  |486 |
@@ -278,7 +296,7 @@ There are three kinds of csv libraries.
 
 - `tcsv.h` and `tcsv.c` in the top directory.
 They are included in the file editor program.
-They read a csv file into two GListStore object (row and column) and their elements (TStr objects).
+They read a csv file and set the header and body of the list.
 -  `csv.h` and `csv.c` in `csv_with_glib` directory.
 They depend on `glib` and `gio` libraries.
 They provide functions to manipulate csv files and a two dimensional array.
@@ -364,26 +382,24 @@ And it checks if the number of the fields is the same as before when the state i
 ### Two dimensional data and list
 
 Csv is a two dimensional data set.
-When the program reads a csv file, it store the data into two list model.
+When the program reads a csv file, it stores the data into two list model.
 The one is GListStore for rows.
 GListStore is a child of GObject and implements GListModel interface.
 Its items are descendants of GObject.
-The other is GListStore for columns.
-Its item is a TStr object which is a child of GObject.
-It has a "string" property.
+The other is GtkStringList for columns.
 
-First GListStore represents a list of records (or rows) of the csv data.
-Each item of the GListStore object is another GListStore.
-The second GListStore represents a record which is a list of elements.
+The GListStore represents a list of records (or rows) of the csv data.
+Each item of the GListStore object is a GtkStringList instance.
+The GtkStringList represents a record which is a list of strings.
 
 ### Reading csv
 
 A function `csv_read` reads csv file.
 
 1. Reads the whole contents of the file into a memory buffer.
-2. validates the csv data and gets the size.
-3. converts the csv data into an TStr object which is the element of GListStore for a record.
-4. The record (GListStore) is appended to the first GListStore.
+2. Validates the csv data and gets the size.
+3. Converts a line of the csv data into an GtkStringList object, which is called a record.
+4. The record is appended to the GListStore.
 
 It uses the state matrix in the conversion.
 
@@ -394,8 +410,8 @@ csv_read (GListStore *liststore, GFile *file, int *n_row, int *n_column, GError 
 Parameters:
   liststore: a list to put records of the csv data. The records include the header (the first line).
   file: GFile object from which the csv data are read.
-  n_row: a pointer to `int`. It is set the number of rows of the csv data. It includes the header.
-  n_column: a pointer to `int` It is set the number of columns (fields) of the csv data. Each record must have the same number of elements.
+  n_row: a pointer to `int`. It is set to the number of rows of the csv data. It includes the header.
+  n_column: a pointer to `int` It is set to the number of columns (fields) of the csv data. Each record must have the same number of elements.
   err: If an error occurs, `*err` is set with the error code and message.
 Return value:
   TRUE if it succeeds, FALSE if it fails.
@@ -408,7 +424,7 @@ A function `csv_write` writes csv data into a file.
 1. Counts commas, NLs and double quotes in each item (string) of the list.
 And decides whether b-field or w- field to convert the string into.
 Calculates the csv size and allocate memory.
-2. convert the TStr data into csv data and put them into the memory.
+2. convert the data into csv data and put them into the memory.
 3. save the memory into a file.
 
 ~~~
@@ -457,4 +473,3 @@ It is expected to have the following features in the future.
 - Support more preference.
 For example, the default width of fields.
 - Support report format and output it as pdf formats.
-

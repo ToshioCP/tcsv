@@ -1,6 +1,6 @@
-`csv.h` and `csv.c` under the directory `csv_without_glib` don't depend on glib and gio.
+Two files `csv.h` and `csv.c` under the directory `csv_without_glib` don't depend on glib and gio.
 Glibc is the only necessary library.
-`test_csv.c`, which is in `test` directory, is a test program for `csv.c`.
+A file `test_csv.c`, which is in `test` directory, is a test program for `csv.c`.
 
 1. Change your current directory to `test`.
 2. Type `meson _build`.
@@ -19,7 +19,7 @@ The library `csv.c`validates, reads and writes a csv file in terms of the follow
 
 - The file consists of UTF-8 characters.
 - Each line ends with NL (New Line '\n').
-At the end of the file, the last line can end either with or without NL. 
+At the end of the file, the last line can end either with or without NL.
 - A line consists of fields.
 Fields are separated by comma (`,`).
 Lines have the same number of fields.
@@ -44,8 +44,8 @@ a, bc, def, ghi
 one, two, three, and "four".
 ~~~
 
-Fields are separated with comma.
-Any fields are not surrounded by double quote.
+Fields are separated with commas.
+Any fields are not surrounded by double quotes.
 If a double quote is in the field, but not at the beginning of the field, it is recognized literally.
 
 ~~~
@@ -223,4 +223,3 @@ Runtime error is usually not a fatal error.
 
 There is a test program `test_csv.c` in the `test` directory.
 It is useful to know how to use `csv.c` and manipulate error system.
-

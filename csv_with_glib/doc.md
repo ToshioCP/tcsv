@@ -1,6 +1,6 @@
-`csv.h` and `csv.c` in this directory depends on `glib` and `gio` libraries.
+Two files `csv.h` and `csv.c` in this directory depends on `glib` and `gio` libraries.
 They provide functions to manipulate csv files.
-If you don't want to use `glib` and `gio`, then use `csv.h` and `csv.c` in `csv_without_glib` directory.
+If you don't want to use `glib` and `gio`, use `csv.h` and `csv.c` in `csv_without_glib` directory.
 They are the same libraries without `glib` and `gio`.
 
 There's a test program in the `test` directory.
@@ -21,7 +21,7 @@ The library `csv.c`validates, reads and writes a csv file in terms of the follow
 
 - The file consists of UTF-8 characters.
 - Each line ends with NL (New Line '\n').
-At the end of the file, the last line can end either with or without NL. 
+At the end of the file, the last line can end either with or without NL.
 - A line consists of fields.
 Fields are separated by comma (`,`).
 Lines have the same number of fields.
@@ -226,4 +226,3 @@ This is based on `G_DEFINE_EXTENDED_ERROR` macro.
 It is included to glib in version 2.68.
 It is the latest version at present (8/May/2021).
 If your glib version is lower than 2.68, this library is impossible to be compiled.
-

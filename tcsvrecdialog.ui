@@ -13,13 +13,16 @@
         <property name="hexpand">TRUE</property>
         <property name="vexpand">TRUE</property>
         <child>
-          <object class="GtkColumnView" id="columnview">
+          <object class="GtkColumnView">
             <property name="hexpand">TRUE</property>
             <property name="vexpand">TRUE</property>
+            <property name="focusable">FALSE</property>
             <property name="model">
-              <object class="GtkNoSelection" id="noselection">
+              <object class="GtkNoSelection">
                 <property name="model">
-                  <object class="GListStore" id="liststore"></object>
+                  <object class="GListStore" id="liststore">
+                    <property name="item-type">TModify</property>
+                  </object>
                 </property>
               </object>
             </property>
@@ -34,14 +37,12 @@
   <template class="GtkListItem">
     <property name="child">
       <object class="GtkLabel">
-        <binding name="css-classes">
-          <closure type="GStrv" function="get_css_class">
-            <constant type="gchararray">header</constant>
-          </closure>
-        </binding>
+        <attributes>
+          <attribute name="background" value="#e8e8e8"/>
+        </attributes>
         <property name="xalign">0</property>
         <binding name="label">
-          <lookup name="first-string" type="TCouple">
+          <lookup name="old-string" type="TModify">
             <lookup name="item">GtkListItem</lookup>
           </lookup>
         </binding>

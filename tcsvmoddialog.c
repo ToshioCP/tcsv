@@ -1,397 +1,118 @@
+#include <gtk/gtk.h>
+#include <stdlib.h>
 #include "tcsvmoddialog.h"
-#include "css.h"
-#include "tstr.h"
-
-/* ----- Start of the definition of TModify object -----*/
-enum {
-  PROP_0,
-  PROP_POSITION,
-  PROP_OLD,
-  PROP_NEW,
-  N_PROPERTIES
-};
-
-static GParamSpec *modify_properties[N_PROPERTIES] = {NULL, };
-
-typedef struct _TModify {
-  GObject parent;
-  int position;
-  char *old;
-  char *new;
-  GtkButton *button;
-  GtkText *text;
-} TModify;
-
-G_DEFINE_TYPE(TModify, t_modify, G_TYPE_OBJECT)
-
-static void
-t_modify_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec) {
-  TModify *self = T_MODIFY (object);
-
-  if (property_id == PROP_POSITION)
-    self->position = g_value_get_int (value);
-  else if (property_id == PROP_OLD)
-    self->old = g_strdup (g_value_get_string (value));
-  else if (property_id == PROP_NEW)
-    self->new = g_strdup (g_value_get_string (value));
-  else
-    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-}
-
-static void
-t_modify_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec) {
-  TModify *self = T_MODIFY (object);
-
-  if (property_id == PROP_POSITION)
-    g_value_set_int (value, self->position);
-  else if (property_id == PROP_OLD)
-    g_value_set_string (value, g_strdup (self->old));
-  else if (property_id == PROP_NEW)
-    g_value_set_string (value, g_strdup (self->new));
-  else
-    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-}
-
-static void
-t_modify_init (TModify *self) {
-  self->position = -1;
-  self->old = self->new = NULL;
-  self->text = NULL;
-}
-
-static void
-t_modify_finalize (GObject *object) {
-  TModify *self = T_MODIFY (object);
-
-  if (self->old)
-    g_clear_object (&self->old);
-  if (self->new)
-    g_clear_object (&self->new);
-  G_OBJECT_CLASS (t_modify_parent_class)->finalize (object);
-}
-
-static void
-t_modify_class_init (TModifyClass *class) {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (class);
-
-  gobject_class->finalize = t_modify_finalize;
-  gobject_class->set_property = t_modify_set_property;
-  gobject_class->get_property = t_modify_get_property;
-  modify_properties[PROP_POSITION] = g_param_spec_int ("position", "pos", "old field position", -1, G_MAXINT, -1, G_PARAM_READWRITE);
-  modify_properties[PROP_OLD] = g_param_spec_string ("old-field", "old", "old field", "", G_PARAM_READWRITE);
-  modify_properties[PROP_NEW] = g_param_spec_string ("new-field", "new", "new field", "", G_PARAM_READWRITE);
-  g_object_class_install_properties (gobject_class,N_PROPERTIES, modify_properties);
-}
-
-/* setter and getter */
-void
-t_modify_set_position (TModify *self, int pos) {
-  g_object_set (self, "position", pos, NULL);
-}
-
-void
-t_modify_set_old_field (TModify *self, const char *old) {
-  g_object_set (self, "old-field", g_strdup (old), NULL);
-}
-
-void
-t_modify_set_new_field (TModify *self, const char *new) {
-  g_object_set (self, "new-field", g_strdup (new), NULL);
-}
-
-int
-t_modify_get_position (TModify *self) {
-  return self->position;
-}
-
-char *
-t_modify_get_old_field (TModify *self) {
-  return g_strdup (self->old);
-}
-
-char *
-t_modify_get_new_field (TModify *self) {
-  return g_strdup (self->new);
-}
-
-void
-t_modify_set_button (TModify *self, GtkButton *button) {
-  g_return_if_fail (T_IS_MODIFY (self));
-  g_return_if_fail (GTK_IS_BUTTON (button) || button == NULL);
-
-  self->button = button;
-}
-
-GtkButton *
-t_modify_get_button (TModify *self) {
-  g_return_val_if_fail (T_IS_MODIFY (self), NULL);
-
-  return self->button;
-}
-
-void
-t_modify_set_text (TModify *self, GtkText *text) {
-  g_return_if_fail (T_IS_MODIFY (self));
-  g_return_if_fail (GTK_IS_TEXT (text) || text == NULL);
-
-  self->text = text;
-}
-
-GtkText *
-t_modify_get_text (TModify *self) {
-  g_return_val_if_fail (T_IS_MODIFY (self), NULL);
-
-  return self->text;
-}
-
-/* create a new TModify instance */
-TModify *
-t_modify_new_with_data (int pos, char *old, char *new) {
-  return T_MODIFY (g_object_new (T_TYPE_MODIFY, "position", pos, "old-field", old, "new-field", new, NULL));
-}
-
-TModify *
-t_modify_new (void) {
-  return T_MODIFY (g_object_new (T_TYPE_MODIFY, NULL));
-}
-
-/* ----- End of the definition of TModify object -----*/
+#include "tmodify.h"
 
 struct _TCsvModDialog
 {
   GtkDialog parent;
   GtkColumnView *columnview;
-  GtkColumnViewColumn *column1;
   GtkColumnViewColumn *column4;
-  GtkNoSelection *noselection;
-  GListStore *liststore;
-  GtkButton *btn_accept;
-  GtkButton *btn_cancel;
-  GSList *blist;
-  GtkWindow *win;
-  int current_field;
+  GListStore *liststore; /* list of tmodify */
+  GtkEntryBuffer *entry_buffer;
 };
 
 G_DEFINE_TYPE (TCsvModDialog, t_csv_mod_dialog, GTK_TYPE_DIALOG);
 
-GSList *
-t_csv_mod_dialog_get_table (TCsvModDialog *mod_dialog) {
-  GSList *table;
-  new_field_config *config;
-  int i, n_items;
-  TModify *modify;
-  char *new;
-
-  table = NULL;
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
-  for (i=0; i<n_items; ++i) {
-    modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), i));
-    new = t_modify_get_new_field (modify);
-    if (strcmp (new, "") != 0) {
-      config = g_new (new_field_config, 1);
-      config->header = new;
-      config->old_position = t_modify_get_position (modify);
-      table = g_slist_append (table, config);
-    } else
-      g_free (new);
-    g_object_unref (modify);
-  }
-  return table;;
-}
-
-GtkWindow *
-t_csv_mod_dialog_get_window (TCsvModDialog *mod_dialog) {
-  return mod_dialog->win;
-}
-
-static void
-color_button (TCsvModDialog *mod_dialog) {
-  GSList *slist;
-  gpointer data;
-  GtkWidget *button, *current_button;
-  TModify *modify;
-
-  if (mod_dialog->current_field < 0 || mod_dialog->current_field >= g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore)))
-    return;
-  for (slist = mod_dialog->blist; slist != NULL; ) {
-    data = slist->data;
-    slist = slist->next;
-    if (! GTK_IS_BUTTON (data))
-      continue;
-    button = GTK_WIDGET (data);
-    modify = g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), mod_dialog->current_field);
-    current_button = GTK_WIDGET (t_modify_get_button (modify));
-    if (button == current_button && ! gtk_widget_has_css_class (button, "selected"))
-      gtk_widget_add_css_class (button, "selected");
-    else if  (button != current_button && gtk_widget_has_css_class (button, "selected"))
-      gtk_widget_remove_css_class (button, "selected");
-  }
-}
-
+/* ----- Button "clicked" signal handlers ----- */
 void
-mod_ins_cb (GtkButton *btnins) {
-  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (gtk_widget_get_ancestor (GTK_WIDGET (btnins), T_TYPE_CSV_MOD_DIALOG));
+mod_up_cb (GtkButton *btn, gpointer user_data) {
+  GtkListItem *listitem = GTK_LIST_ITEM (user_data);
+  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (gtk_widget_get_ancestor (GTK_WIDGET (btn), T_TYPE_CSV_MOD_DIALOG));
   TModify *modify;
-  int n_items;
-  GtkText *text;
+  int i;
 
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
-  if (mod_dialog->current_field >= n_items)
+  i = gtk_list_item_get_position (listitem);
+  if (i == GTK_INVALID_LIST_POSITION || i == 0)
     return;
-  modify = t_modify_new_with_data (-1, "", "");
-  if (n_items  == 0 || mod_dialog->current_field < 0) {
-    g_list_store_insert (mod_dialog->liststore, 0, modify);
-    mod_dialog->current_field = 0;
-  } else
-    g_list_store_insert (mod_dialog->liststore, mod_dialog->current_field, modify);
-  color_button (mod_dialog);
-  if (GTK_IS_WIDGET (text = t_modify_get_text (modify)))
-    gtk_widget_grab_focus (GTK_WIDGET (text));
-}
-
-void
-mod_app_cb (GtkButton *btnapp) {
-  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (gtk_widget_get_ancestor (GTK_WIDGET (btnapp), T_TYPE_CSV_MOD_DIALOG));
-  TModify *modify;
-  int n_items;
-  GtkText *text;
-
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
-  if (mod_dialog->current_field >= n_items)
-    return;
-  modify = t_modify_new_with_data (-1, "", "");
-  if (n_items  == 0 || mod_dialog->current_field < 0) {
-    g_list_store_append (mod_dialog->liststore, modify);
-    mod_dialog->current_field = n_items;
-  } else
-    g_list_store_insert (mod_dialog->liststore, ++mod_dialog->current_field, modify);
-  color_button (mod_dialog);
-  if (GTK_IS_WIDGET (text = t_modify_get_text (modify)))
-    gtk_widget_grab_focus (GTK_WIDGET (text));
-}
-
-void
-mod_rm_cb (GtkButton *btnrm) {
-  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (gtk_widget_get_ancestor (GTK_WIDGET (btnrm), T_TYPE_CSV_MOD_DIALOG));
-  TModify *modify;
-  char *old;
-  char *new;
-  int n_items;
-  GtkText *text;
-  GtkEntryBuffer *buffer;
-
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
-  if (n_items == 0 || mod_dialog->current_field < 0 || mod_dialog->current_field >= n_items)
-    return;
-  modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), mod_dialog->current_field));
-  if (! T_MODIFY (modify))
-    return;
-  old = t_modify_get_old_field (modify);
-  new = t_modify_get_new_field (modify);
-  if (strcmp (old, "") != 0) {
-    t_modify_set_new_field (modify, "");
-    if (GTK_IS_TEXT (text = t_modify_get_text (modify))) {
-      buffer = gtk_text_get_buffer (text);
-      gtk_entry_buffer_set_text (buffer, "", -1);
-    }
-  } else {
-    g_list_store_remove (mod_dialog->liststore, mod_dialog->current_field);
-    mod_dialog->current_field = -1;
-  }
-  g_free (old);
-  g_free (new);
+  modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), i));
+  g_list_store_remove (mod_dialog->liststore, i);
+  g_list_store_insert (mod_dialog->liststore, i-1, modify);
   g_object_unref (modify);
 }
 
-static void
-mod_field_selected_cb (GtkButton *btn, gpointer user_data) {
+void
+mod_down_cb (GtkButton *btn, gpointer user_data) {
   GtkListItem *listitem = GTK_LIST_ITEM (user_data);
   TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (gtk_widget_get_ancestor (GTK_WIDGET (btn), T_TYPE_CSV_MOD_DIALOG));
+  TModify *modify;
+  int i, n_items;
 
-  mod_dialog->current_field = gtk_list_item_get_position (listitem);
-  color_button (mod_dialog);
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
+  i = gtk_list_item_get_position (listitem);
+  if (i == GTK_INVALID_LIST_POSITION || i == n_items-1)
+    return;
+  modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), i));
+  g_list_store_insert (mod_dialog->liststore, i+2, modify);
+  g_list_store_remove (mod_dialog->liststore, i);
+  g_object_unref (modify);
 }
 
-static void
-setup1_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
+void
+mod_app_cb (GtkButton *btnapp, gpointer user_data) {
   TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (user_data);
-  GtkWidget *button = gtk_button_new ();
+  TModify *modify;
 
-  gtk_widget_add_css_class (button, "field-number");
-  gtk_widget_set_focusable (button, FALSE);
-  gtk_list_item_set_child (listitem, button);
-  mod_dialog->blist = g_slist_append (mod_dialog->blist, button);
-  g_signal_connect (button, "clicked", G_CALLBACK (mod_field_selected_cb), listitem);
+  modify = t_modify_new_with_data (-1, -1, "", "");
+  g_list_store_append (mod_dialog->liststore, modify);
+  g_object_unref (modify);
 }
 
-static void
-bind1_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
-  GtkWidget *button = gtk_list_item_get_child (listitem);
-  TModify *modify = T_MODIFY (gtk_list_item_get_item (listitem));
-  char *s;
-  int pos;
+void
+mod_ins_cb (GtkButton *btnins, gpointer user_data) {
+  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (user_data);
+  TModify *modify;
+  int n_items, position;
 
-  if (T_IS_MODIFY (modify) && GTK_IS_BUTTON (button)) {
-    pos = t_modify_get_position (modify);
-    if (pos >= 0)
-      s = g_strdup_printf ("%2d", pos);
-    else
-      s = g_strdup ("");
-    gtk_button_set_label (GTK_BUTTON (button), s);
-    g_free (s);
-    t_modify_set_button (modify, GTK_BUTTON (button));
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
+  position = atoi (gtk_entry_buffer_get_text (mod_dialog->entry_buffer));
+  position = position < 0 ? 0 : position;
+  position = position >= n_items ? n_items - 1 : position;
+  modify = t_modify_new_with_data (-1, -1, "", "");
+  g_list_store_insert (mod_dialog->liststore, position, modify);
+  g_object_unref (modify);
+}
+
+void
+mod_clean_cb (GtkButton *btnrm, gpointer user_data) {
+  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (user_data);
+  TModify *modify;
+  int j, n_items;
+
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (mod_dialog->liststore));
+  for (j=n_items-1; j>=0; --j) {
+    modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), j));
+    if (t_modify_get_old_position (modify) == -1
+            && g_strcmp0 (t_modify_look_old_string (modify), "") == 0
+            && g_strcmp0 (t_modify_look_new_string (modify), "") == 0)
+      g_list_store_remove (mod_dialog->liststore, j);
+    g_object_unref (modify);
   }
 }
 
-static void
-unbind1_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
-  TModify *modify = T_MODIFY (gtk_list_item_get_item (listitem));
-
-  if (T_IS_MODIFY (modify))
-    t_modify_set_button (modify, NULL);
-}
-
-static void
-teardown1_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
-  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (user_data);
-  GtkWidget *button = gtk_list_item_get_child (listitem);
-
-  if (GTK_IS_BUTTON (button)) {
-    mod_dialog->blist = g_slist_remove (mod_dialog->blist, button);
-    gtk_list_item_set_child (listitem, NULL);
-  }
-}
-
+/* ----- Handler for the closure tag ----- */
 char *
-get_state (GtkListItem *listitem, char *old, char *new) {
+get_state (GtkListItem *listitem, char *old_field, char *new_field) {
   TModify *modify = T_MODIFY (gtk_list_item_get_item (listitem));
+  gboolean old, new;
 
-  if (! T_IS_MODIFY (modify) || old == NULL || new == NULL)
-    return g_strdup ("");
-  if (strcmp (old, "") == 0 && strcmp (new, "") != 0)
+  if (! T_IS_MODIFY (modify)) /* though unexpected */
+    return NULL;
+  old = old_field && *old_field; /* not NULL nor "" */
+  new = new_field && *new_field;
+  if ((! old) && (! new))
+    return NULL;
+  else if ((! old) && new)
     return g_strdup ("Added");
-  else if (strcmp (old, "") != 0 && strcmp (new, "") == 0)
+  else if (old && (! new))
     return g_strdup ("Removed");
-  else if (strcmp (old, "") != 0 && strcmp (new, "") != 0 && strcmp (old, new) != 0)
+  else if (old && new && strcmp (old_field, new_field) != 0)
     return g_strdup ("Changed");
-  else
-    return g_strdup ("");
+  else /* old && new && strcmp (old_field, new_field) == 0 */
+    return NULL;
 }
 
-static void
-mod_deleted_text_cb (GtkEntryBuffer *buffer, guint position, guint n_chars, gpointer user_data) {
-  TModify *modify = T_MODIFY (user_data);
-
-  t_modify_set_new_field (modify, gtk_entry_buffer_get_text (buffer));
-}
-
-static void
-mod_inserted_text_cb (GtkEntryBuffer *buffer, guint position, char *chars, guint n_chars, gpointer user_data) {
-  TModify *modify = T_MODIFY (user_data);
-
-  t_modify_set_new_field (modify, gtk_entry_buffer_get_text (buffer));
-}
-
+/* ----- setup, bind and unbind for GtkSignalListItemFactory ----- */
 static void
 setup4_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
   GtkWidget *text = gtk_text_new ();
@@ -403,45 +124,20 @@ bind4_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_d
   GtkWidget *text = gtk_list_item_get_child (listitem);
   TModify *modify = T_MODIFY (gtk_list_item_get_item (listitem));
   GtkEntryBuffer *buffer;
-  char *new;
+  GBinding *bind;
 
-  if (T_IS_MODIFY (modify)) {
-    buffer = gtk_text_get_buffer (GTK_TEXT (text));
-    new = t_modify_get_new_field (modify);
-    gtk_entry_buffer_set_text (buffer, new, -1);
-    g_free (new);
-
-    t_modify_set_text (modify, GTK_TEXT (text));
-    g_signal_connect_after (buffer, "deleted-text", G_CALLBACK (mod_deleted_text_cb), modify);
-    g_signal_connect (buffer, "inserted-text", G_CALLBACK (mod_inserted_text_cb), modify);
-  }
+  buffer = gtk_text_get_buffer (GTK_TEXT (text));
+  gtk_entry_buffer_set_text (buffer, t_modify_look_new_string (modify), -1);
+  bind = g_object_bind_property (buffer, "text", modify, "new-string", G_BINDING_DEFAULT);
+  g_object_set_data (G_OBJECT (listitem), "bind", bind);
 }
 
 static void
 unbind4_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
-  GtkWidget *text = gtk_list_item_get_child (listitem);
-  GtkEntryBuffer *buffer = gtk_text_get_buffer (GTK_TEXT (text));
-  TModify *modify = T_MODIFY (gtk_list_item_get_item (listitem));
+  GBinding *bind = G_BINDING (g_object_get_data (G_OBJECT (listitem), "bind"));
 
-  if (T_IS_MODIFY (modify)) {
-    t_modify_set_text (modify, NULL);
-    g_signal_handlers_disconnect_by_func (buffer, mod_deleted_text_cb, modify);
-    g_signal_handlers_disconnect_by_func (buffer, mod_inserted_text_cb, modify);
-  }
-}
-
-static void
-teardown4_cb (GtkSignalListItemFactory *self, GtkListItem *listitem, gpointer user_data) {
-  gtk_list_item_set_child (listitem, NULL);
-}
-
-static void
-t_csv_mod_dialog_finalize (GObject *object) {
-  TCsvModDialog *mod_dialog = T_CSV_MOD_DIALOG (object);
-
-  if (mod_dialog->blist)
-    g_slist_free (mod_dialog->blist);
-  G_OBJECT_CLASS (t_csv_mod_dialog_parent_class)->finalize (object);
+  g_binding_unbind(bind);
+  g_object_set_data (G_OBJECT (listitem), "bind", NULL);
 }
 
 static void
@@ -449,71 +145,51 @@ t_csv_mod_dialog_init (TCsvModDialog *mod_dialog) {
   gtk_widget_init_template (GTK_WIDGET (mod_dialog));
   GtkListItemFactory *factory;
 
-  mod_dialog->blist =  NULL;
-  factory = gtk_signal_list_item_factory_new ();
-  gtk_column_view_column_set_factory (mod_dialog->column1, factory);
-  g_signal_connect (factory, "setup", G_CALLBACK (setup1_cb), mod_dialog);
-  g_signal_connect (factory, "bind", G_CALLBACK (bind1_cb), NULL);
-  g_signal_connect (factory, "unbind", G_CALLBACK (unbind1_cb), NULL);
-  g_signal_connect (factory, "teardown", G_CALLBACK (teardown1_cb), mod_dialog);
   factory = gtk_signal_list_item_factory_new ();
   gtk_column_view_column_set_factory (mod_dialog->column4, factory);
   g_signal_connect (factory, "setup", G_CALLBACK (setup4_cb), NULL);
   g_signal_connect (factory, "bind", G_CALLBACK (bind4_cb), NULL);
   g_signal_connect (factory, "unbind", G_CALLBACK (unbind4_cb), NULL);
-  g_signal_connect (factory, "teardown", G_CALLBACK (teardown4_cb), NULL);
-  mod_dialog->current_field = -1;
-  set_css_for_display (GTK_WINDOW (mod_dialog),
-  "text:focus {border: 1px solid gray;} button.field-number {color: black; background: #e8e8e8;} button.selected {background: lightblue;}");
-
 }
 
 static void
 t_csv_mod_dialog_class_init (TCsvModDialogClass *class) {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (class);
+  // GObjectClass *gobject_class = G_OBJECT_CLASS (class);
 
-  gobject_class->finalize = t_csv_mod_dialog_finalize;
   gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (class), "/com/github/ToshioCP/tcsv/tcsvmoddialog.ui");
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, columnview);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, column1);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, column4);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, noselection);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, liststore);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, btn_accept);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, btn_cancel);
+  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvModDialog, entry_buffer);
+}
+
+/* ----- Return list store of modify object ----- */
+// Returned value is owned by the caller.
+// Returned value can be NULL.
+GListStore *
+t_csv_mod_dialog_get_list_modify (TCsvModDialog *mod_dialog) {
+  return g_object_ref (mod_dialog->liststore);
 }
 
 GtkWidget *
-t_csv_mod_dialog_new (GtkWindow *win, GListStore *header) {
+t_csv_mod_dialog_new (GtkWindow *win, GtkStringList *header) {
   g_return_val_if_fail (GTK_IS_WINDOW (win), NULL);
-  g_return_val_if_fail (G_IS_LIST_STORE (header), NULL);
+  g_return_val_if_fail (GTK_IS_STRING_LIST (header) || header == NULL, NULL);
 
   TCsvModDialog *mod_dialog;
   int j, n_items;
   TModify *modify;
-  TStr *str;
-  char *old;
-  GtkWidget *text;
-
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (header));
-  if (n_items == 0)
-    return NULL;
+  const char *old;
 
   mod_dialog = T_CSV_MOD_DIALOG (g_object_new (T_TYPE_CSV_MOD_DIALOG, "transient-for", win, NULL));
-  for (j=0; j<n_items; ++j) {
-    str = T_STR (g_list_model_get_item (G_LIST_MODEL (header), j));
-    old = t_str_get_string (str);
-    modify = t_modify_new_with_data (j, old, old);
-    g_list_store_append (mod_dialog->liststore, modify);
-    g_free (old);
-    g_object_unref (str);
+  if (header) {
+    n_items = g_list_model_get_n_items (G_LIST_MODEL (header));
+    for (j=0; j<n_items; ++j) {
+      old = gtk_string_list_get_string (header, j);
+      modify = t_modify_new_with_data (j, -1, old, old);
+      g_list_store_append (mod_dialog->liststore, modify);
+      g_object_unref (modify);
+    }
   }
-  mod_dialog->win = win;
-  modify = g_list_model_get_item (G_LIST_MODEL (mod_dialog->liststore), 0);
-  text = GTK_WIDGET (t_modify_get_text (modify));
-  if (GTK_WIDGET (text))
-    gtk_widget_grab_focus (text);
-
   return GTK_WIDGET (mod_dialog);
 }
-

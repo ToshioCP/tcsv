@@ -76,9 +76,6 @@
                   <object class="GtkSingleSelection" id="singleselection">
                     <property name="model">
                       <object class="GtkSortListModel" id="sortlist">
-                        <property name="model">
-                          <object class="GListStore" id="liststore"></object>
-                        </property>
                         <binding name="sorter">
                           <lookup name="sorter">columnview</lookup>
                         </binding>

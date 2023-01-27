@@ -43,10 +43,10 @@ See the [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) 
 
 Prerequisites.
 
-- Gtk4
+- Gtk4 4.8 or later
 - Glib 2.68.0 or later
 
-Compiling and installation.
+Installation.
 
 ~~~
 $ meson _build
@@ -59,4 +59,3 @@ Execution.
 ~~~
 $ tcsv
 ~~~
-
