@@ -5,47 +5,53 @@
     <property name="default-width">1200</property>
     <property name="default-height">800</property>
     <child>
-      <object class="GtkBox" id="boxv">
+      <object class="GtkBox">
         <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
         <child>
-          <object class="GtkBox" id="boxh">
+          <object class="GtkBox">
             <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
             <child>
-              <object class="GtkLabel" id="dmy1">
+              <object class="GtkLabel">
                 <property name="width-chars">10</property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="btnar">
+              <object class="GtkButton">
                 <property name="label">Append Record</property>
                 <property name="action-name">win.apprec</property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="btnrr">
+              <object class="GtkButton">
                 <property name="label">Remove Record</property>
                 <property name="action-name">win.rmrec</property>
               </object>
             </child>
             <child>
-              <object class="GtkLabel" id="dmy2">
+              <object class="GtkButton">
+                <property name="label">Ediit Record</property>
+                <property name="action-name">win.edrec</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
                 <property name="hexpand">TRUE</property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="btno">
+              <object class="GtkButton">
                 <property name="label">Open</property>
                 <property name="action-name">win.open</property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="btns">
+              <object class="GtkButton">
                 <property name="label">Save</property>
                 <property name="action-name">win.save</property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="btnc">
+              <object class="GtkButton">
                 <property name="label">Close</property>
                 <property name="action-name">win.close</property>
               </object>
@@ -58,22 +64,27 @@
               </object>
             </child>
             <child>
-              <object class="GtkLabel" id="dmy3">
+              <object class="GtkLabel">
                 <property name="width-chars">10</property>
               </object>
             </child>
           </object>
         </child>
         <child>
-          <object class="GtkScrolledWindow" id="scr">
+          <object class="GtkScrolledWindow">
             <property name="hexpand">TRUE</property>
             <property name="vexpand">TRUE</property>
+            <property name="vadjustment">
+              <object class="GtkAdjustment">
+                <signal name="value-changed" handler="adjustment_value_changed_cb" swapped="no" object="TCsvWindow"/>
+              </object>
+            </property>
             <child>
               <object class="GtkColumnView" id="columnview">
                 <property name="hexpand">TRUE</property>
                 <property name="vexpand">TRUE</property>
                 <property name="model">
-                  <object class="GtkSingleSelection" id="singleselection">
+                  <object class="GtkNoSelection">
                     <property name="model">
                       <object class="GtkSortListModel" id="sortlist">
                         <binding name="sorter">
@@ -83,6 +94,64 @@
                     </property>
                   </object>
                 </property>
+                <child>
+                  <object class="GtkColumnViewColumn">
+                    <property name="title">Up</property>
+                    <property name="factory">
+                      <object class="GtkBuilderListItemFactory">
+                        <property name="bytes"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkButton">
+        <property name="label">↑</property>
+        <property name="focusable">FALSE</property>
+        <signal name="clicked" handler="win_up_cb" swapped="false" object="GtkListItem"></signal>
+      </object>
+    </property>
+  </template>
+</interface>
+                        ]]></property>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkColumnViewColumn">
+                    <property name="title">Down</property>
+                    <property name="factory">
+                      <object class="GtkBuilderListItemFactory">
+                        <property name="bytes"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkButton">
+        <property name="label">↓</property>
+        <property name="focusable">FALSE</property>
+        <signal name="clicked" handler="win_down_cb" swapped="false" object="GtkListItem"></signal>
+      </object>
+    </property>
+  </template>
+</interface>
+                        ]]></property>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkColumnViewColumn">
+                    <property name="title">Current</property>
+                    <property name="factory">
+                      <object class="GtkSignalListItemFactory">
+                        <signal name="setup"  handler="setup1_cb"></signal>
+                        <signal name="bind"   handler="bind1_cb" swapped = "no" object = "TCsvWindow"></signal>
+                        <signal name="unbind" handler="unbind1_cb"></signal>
+                      </object>
+                    </property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>

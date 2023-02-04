@@ -80,8 +80,9 @@ app_startup (GApplication *application) {
     const char *action;
     const char *accels[2];
   } action_accels[] = {
-    { "win.apprec", { "<Control>e", NULL } },
+    { "win.apprec", { "<Control>d", NULL } },
     { "win.rmrec", { "<Control>r", NULL } },
+    { "win.edrec", { "<Control>e", NULL } },
     { "win.new", { "<Control>n", NULL } },
     { "win.open", { "<Control>o", NULL } },
     { "win.save", { "<Control>s", NULL } },
@@ -95,11 +96,7 @@ app_startup (GApplication *application) {
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), action_accels[i].action, action_accels[i].accels);
 
   provider0 = gtk_css_provider_new ();
-  gtk_css_provider_load_from_data (provider0,
-          "text:focus {border: 1px solid gray;}"
-          "button.field-number {color: black; background: #e8e8e8;}"
-          "button.selected {background: lightblue;}",
-          -1);
+  gtk_css_provider_load_from_data (provider0, "text:focus {border: 1px solid gray;} columnview listview row button.current {background: red;}", -1);
   gtk_style_context_add_provider_for_display (gdk_display_get_default (),
           GTK_STYLE_PROVIDER (provider0), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref (provider0);

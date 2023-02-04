@@ -1,7 +1,9 @@
 English,Japanese,Part of speech,Example,Note
-a paper,新聞,,Have you read a today's paper? 今日の新聞読んだ？,新聞は加算なので不定冠詞aをつける。「紙」の意味のpaperは不加算。
-happy,幸せな、幸福な,,Make you happy. お幸せに。,形容詞
-cup,カップ、コップ,,a cup of coffee 一杯のコーヒー。コーヒーは不加算（数えられない）ので、カップにより個数を表す,名詞
-small,小さい,,small dog 小さい犬,形容詞
-Just,ただ、すぐに、ほんの,,Just do it. やりなさい。,副詞
-big,大きい,,A big house 大きな家,形容詞
+a paper,新聞,名詞,Have you read a today's paper? 今日の新聞読んだ？,新聞は加算なので不定冠詞aをつける。「紙」の意味のpaperは不加算。
+happy,幸せな、幸福な,形容詞,Make you happy. お幸せに。,
+cup,カップ、コップ,名詞,a cup of coffee 一杯のコーヒー。コーヒーは不加算（数えられない）ので、カップにより個数を表す,
+small,小さい,形容詞,small dog 小さい犬,
+Just,ただ、すぐに、ほんの,副詞,Just do it. やりなさい。,
+big,大きい,形容詞,A big house 大きな家,
+speak,話す,動詞,He speaks Japanese. 彼は日本語を話す。,
+talk,話す,動詞,I talked to him. 私は彼と話した。,
