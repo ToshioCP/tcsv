@@ -1,13 +1,17 @@
 #include <gtk/gtk.h>
 #include "../tcsvmoddialog.h"
 #include "../tmodify.h"
-
-const char *s_header[4] = {"one", "two", "three", NULL};
+#include "../tcsvstr.h"
+#include "../tcsvstringlist.h"
 
 GtkWidget *
 create_mod_dialog (GtkWindow *win) {
-  const char *s_header[4] = {"one", "two", "three", NULL};
-  GtkStringList *header = gtk_string_list_new (s_header);
+  const char *s_header[3] = {"one", "two", "three"};
+  GListStore *header = g_list_store_new (T_TYPE_CSV_STR);
+  int i;
+  for (i=0; i<3; ++i) {
+    sl_append_string (header, s_header[i]);
+  }
   GtkWidget *mod_dialog = t_csv_mod_dialog_new (win, header);
   g_object_unref (header);
   return mod_dialog;
@@ -52,7 +56,7 @@ app_startup (GApplication *application) {
 
   gtk_application_window_new (app);
   provider0 = gtk_css_provider_new ();
-  gtk_css_provider_load_from_data (provider0, "text:focus {border: 1px solid gray;}", -1);
+  gtk_css_provider_load_from_data (provider0, "text:focus {border: 1px solid gray;} columnview listview row button.current {background: red;}", -1);
   gtk_style_context_add_provider_for_display (gdk_display_get_default (),
           GTK_STYLE_PROVIDER (provider0), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref (provider0);

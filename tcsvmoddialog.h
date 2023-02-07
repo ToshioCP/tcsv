@@ -10,6 +10,6 @@ GListStore *
 t_csv_mod_dialog_get_list_modify (TCsvModDialog *mod_dialog);
 
 GtkWidget *
-t_csv_mod_dialog_new (GtkWindow *win, GtkStringList *header);
+t_csv_mod_dialog_new (GtkWindow *win, GListStore *header);
 
 #endif /* __T_CSV_MOD_DIALOG_H__ */

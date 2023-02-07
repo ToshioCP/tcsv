@@ -56,7 +56,7 @@ test_t_modify (void) {
   int p1, p2;
   char *s1;
   char *s2;
-  TModify *modify;
+  TModify *modify, *modify_other;
 
   s1 = "Hello";
   s2 = "Bye";
@@ -97,6 +97,21 @@ test_t_modify (void) {
     g_print ("expected is %s\n", "second");
     g_print ("actual is %s\n", s2);
   }
+  // now, modify is (5, 6, "first", "second")
+  modify_other = t_modify_new_with_data (1, 2, "big", "small");
+  t_modify_swap_data (modify, modify_other);
+  if (t_modify_get_old_position(modify) != 1
+    || t_modify_get_new_position(modify) != 2
+    || g_strcmp0 (t_modify_look_old_string(modify), "big") != 0
+    || g_strcmp0 (t_modify_look_new_string(modify), "small") != 0
+    || t_modify_get_old_position(modify_other) != 5
+    || t_modify_get_new_position(modify_other) != 6
+    || g_strcmp0 (t_modify_look_old_string(modify_other), "first") != 0
+    || g_strcmp0 (t_modify_look_new_string(modify_other), "second") != 0
+    )
+    g_print ("swap data failed.\n");
+  g_object_unref (modify);
+  g_object_unref (modify_other);
 }
 
 int

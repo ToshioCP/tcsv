@@ -8,7 +8,7 @@ resources = gnome.compile_resources('resources','tcsv.gresource.xml')
 gnome.compile_schemas(build_by_default: true, depend_files: 'com.github.ToshioCP.tcsv.gschema.xml')
 
 sourcefiles=files('main.c', 'tcsvapplication.c', 'tcsvwindow.c', 'tcsvpref.c', 'tcsvalert.c', 'tcsv.c', 'pfd2css.c',
-                  'tcsvrecdialog.c', 'tcsvmoddialog.c', 'tmodify.c')
+                  'tcsvrecdialog.c', 'tcsvmoddialog.c', 'tmodify.c', 'tcsvstringlist.c', 'tcsvstr.c')
 
 executable('tcsv', sourcefiles, resources, dependencies: gtkdep, export_dynamic: true, install: true)
 

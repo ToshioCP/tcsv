@@ -29,8 +29,20 @@
             </child>
             <child>
               <object class="GtkButton">
-                <property name="label">Ediit Record</property>
+                <property name="label">Edit Record</property>
                 <property name="action-name">win.edrec</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="label">↑</property>
+                <signal name="clicked" handler="win_up_cb" swapped="false" object="TCsvWindow"></signal>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="label">↓</property>
+                <signal name="clicked" handler="win_down_cb" swapped="false" object="TCsvWindow"></signal>
               </object>
             </child>
             <child>
@@ -94,52 +106,6 @@
                     </property>
                   </object>
                 </property>
-                <child>
-                  <object class="GtkColumnViewColumn">
-                    <property name="title">Up</property>
-                    <property name="factory">
-                      <object class="GtkBuilderListItemFactory">
-                        <property name="bytes"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <template class="GtkListItem">
-    <property name="child">
-      <object class="GtkButton">
-        <property name="label">↑</property>
-        <property name="focusable">FALSE</property>
-        <signal name="clicked" handler="win_up_cb" swapped="false" object="GtkListItem"></signal>
-      </object>
-    </property>
-  </template>
-</interface>
-                        ]]></property>
-                      </object>
-                    </property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkColumnViewColumn">
-                    <property name="title">Down</property>
-                    <property name="factory">
-                      <object class="GtkBuilderListItemFactory">
-                        <property name="bytes"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <template class="GtkListItem">
-    <property name="child">
-      <object class="GtkButton">
-        <property name="label">↓</property>
-        <property name="focusable">FALSE</property>
-        <signal name="clicked" handler="win_down_cb" swapped="false" object="GtkListItem"></signal>
-      </object>
-    </property>
-  </template>
-</interface>
-                        ]]></property>
-                      </object>
-                    </property>
-                  </object>
-                </child>
                 <child>
                   <object class="GtkColumnViewColumn">
                     <property name="title">Current</property>

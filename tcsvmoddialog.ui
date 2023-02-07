@@ -22,23 +22,26 @@
             </child>
             <child>
               <object class="GtkButton">
-                <property name="label">Insert new field before</property>
+                <property name="label">Insert new field</property>
                 <signal name="clicked" handler="mod_ins_cb" swapped="false" object="TCsvModDialog"></signal>
               </object>
             </child>
             <child>
-              <object class="GtkEntry">
-                <property name="buffer">
-                  <object class="GtkEntryBuffer" id="entry_buffer">
-                    <property name="text">0</property>
-                  </object>
-                </property>
+              <object class="GtkButton">
+                <property name="label">Remove field</property>
+                <signal name="clicked" handler="mod_rm_cb" swapped="false" object="TCsvModDialog"></signal>
               </object>
             </child>
             <child>
               <object class="GtkButton">
-                <property name="label">Clean</property>
-                <signal name="clicked" handler="mod_clean_cb" swapped="false" object="TCsvModDialog"></signal>
+                <property name="label">↑</property>
+                <signal name="clicked" handler="mod_up_cb" swapped="false" object="TCsvModDialog"></signal>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="label">↓</property>
+                <signal name="clicked" handler="mod_down_cb" swapped="false" object="TCsvModDialog"></signal>
               </object>
             </child>
             <child>
@@ -71,46 +74,12 @@
                 </property>
                 <child>
                   <object class="GtkColumnViewColumn">
-                    <property name="title">Up</property>
+                    <property name="title">Current</property>
                     <property name="factory">
-                      <object class="GtkBuilderListItemFactory">
-                        <property name="bytes"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <template class="GtkListItem">
-    <property name="child">
-      <object class="GtkButton">
-        <property name="label">↑</property>
-        <property name="focusable">FALSE</property>
-        <signal name="clicked" handler="mod_up_cb" swapped="false" object="GtkListItem"></signal>
-      </object>
-    </property>
-  </template>
-</interface>
-                        ]]></property>
-                      </object>
-                    </property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkColumnViewColumn">
-                    <property name="title">Down</property>
-                    <property name="factory">
-                      <object class="GtkBuilderListItemFactory">
-                        <property name="bytes"><![CDATA[
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <template class="GtkListItem">
-    <property name="child">
-      <object class="GtkButton">
-        <property name="label">↓</property>
-        <property name="focusable">FALSE</property>
-        <signal name="clicked" handler="mod_down_cb" swapped="false" object="GtkListItem"></signal>
-      </object>
-    </property>
-  </template>
-</interface>
-                        ]]></property>
+                      <object class="GtkSignalListItemFactory">
+                        <signal name="setup"  handler="setup1_cb"/>
+                        <signal name="bind"   handler="bind1_cb" swapped = "no" object = "TCsvModDialog"/>
+                        <signal name="unbind" handler="unbind1_cb"/>
                       </object>
                     </property>
                   </object>
@@ -226,6 +195,13 @@
                   <object class="GtkColumnViewColumn" id="column4">
                     <property name="title">New field</property>
                     <property name="expand">TRUE</property>
+                    <property name="factory">
+                      <object class="GtkSignalListItemFactory">
+                        <signal name="setup"  handler="setup2_cb"></signal>
+                        <signal name="bind"   handler="bind2_cb"></signal>
+                        <signal name="unbind" handler="unbind2_cb"></signal>
+                      </object>
+                    </property>
                   </object>
                 </child>
               </object>

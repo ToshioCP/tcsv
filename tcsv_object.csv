@@ -1,13 +1,12 @@
 Object name,Property,Type
-TStr,string,string
-TModify,position,int
-TModify,old-field,string
-TModify,new-field,string
-TCouple,first-string,string
-TCouple,second-string,string
+TCsvStr,string,string
+TModify,old-position,int
+TModify,new-position,int
+TModify,old-string,string
+TModify,new-string,string
 TCsvAlert,,
 TCsvPref,,
 TCsvRecDialog,,
-TCdvNewDialog,,
 TCsvModDialog,,
+TCsvRecord,,
 TCsvWindow,,

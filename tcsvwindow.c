@@ -5,110 +5,8 @@
 #include "tcsvrecdialog.h"
 #include "tcsvmoddialog.h"
 #include "tmodify.h"
-
-/* Definition of TCsvStr object */
-/* It is a wrapper of a string */
-#define T_TYPE_CSV_STR  (t_csv_str_get_type ())
-G_DECLARE_FINAL_TYPE (TCsvStr, t_csv_str, T, CSV_STR, GObject)
-
-enum {
-  PROP_0,
-  PROP_STRING,
-  N_PROPERTIES
-};
-
-static GParamSpec *str_properties[N_PROPERTIES] = {NULL, };
-
-struct _TCsvStr{
-  GObject parent;
-  char *string;
-};
-
-G_DEFINE_TYPE (TCsvStr, t_csv_str, G_TYPE_OBJECT)
-
-static void
-t_csv_str_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec) {
-  TCsvStr *self = T_CSV_STR (object);
-
-  if (property_id == PROP_STRING) {
-    self->string = g_strdup (g_value_get_string (value));
-  } else
-    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-}
-
-static void
-t_csv_str_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec) {
-  TCsvStr *self = T_CSV_STR (object);
-
-  if (property_id == PROP_STRING)
-    g_value_set_string (value, g_strdup (self->string));
-  else
-    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-}
-
-/* setter and getter */
-void
-t_csv_str_set_string (TCsvStr *self, const char *s) {
-  g_return_if_fail (T_IS_CSV_STR (self));
-  if (self->string)
-    g_free (self->string);
-  self->string = g_strdup (s);
-}
-
-void
-t_csv_str_take_string (TCsvStr *self, char *s) {
-  g_return_if_fail (T_IS_CSV_STR (self));
-  if (self->string)
-    g_free (self->string);
-  self->string = s;
-}
-
-char *
-t_csv_str_get_string (TCsvStr *self) {
-  g_return_val_if_fail (T_IS_CSV_STR (self), NULL);
-  return g_strdup (self->string);
-}
-
-const char *
-t_csv_str_look_string (TCsvStr *self) {
-  g_return_val_if_fail (T_IS_CSV_STR (self), NULL);
-  return self->string;
-}
-
-static void
-t_csv_str_finalize (GObject *object) {
-  TCsvStr *self = T_CSV_STR (object);
-  if (self->string)
-    g_free (self->string);
-  G_OBJECT_CLASS (t_csv_str_parent_class)->finalize (object);
-}
-
-static void
-t_csv_str_init (TCsvStr *self) {
-  self->string = NULL;
-}
-
-static void
-t_csv_str_class_init (TCsvStrClass *class) {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (class);
-
-  gobject_class->finalize = t_csv_str_finalize;
-  gobject_class->set_property = t_csv_str_set_property;
-  gobject_class->get_property = t_csv_str_get_property;
-  str_properties[PROP_STRING] = g_param_spec_string ("string", "str", "string", "", G_PARAM_READWRITE);
-  g_object_class_install_properties (gobject_class, N_PROPERTIES, str_properties);
-}
-
-/* create a new TCsvStr instance */
-TCsvStr *
-t_csv_str_new_with_string (const char *s) {
-  return T_CSV_STR (g_object_new (T_TYPE_CSV_STR, "string", s, NULL));
-}
-
-TCsvStr *
-t_csv_str_new (void) {
-  return T_CSV_STR (g_object_new (T_TYPE_CSV_STR, NULL));
-}
+#include "tcsvstr.h"
+#include "tcsvstringlist.h"
 
 /* Deinition of TCsvRecord */
 /* It includes a pointer to a GtkListItem and Gliststore */
@@ -119,11 +17,10 @@ G_DECLARE_FINAL_TYPE (TCsvRecord, t_csv_record, T, CSV_RECORD, GObject)
 struct _TCsvRecord {
   GObject parent;
   GtkListItem *listitem;
-  GListStore *liststore;
+  GListStore *liststore; /* tcsv_stringlist */
 };
 
 G_DEFINE_TYPE (TCsvRecord, t_csv_record, G_TYPE_OBJECT)
-
 
 /* setter and getter */
 void
@@ -138,7 +35,7 @@ t_csv_record_set_list_item (TCsvRecord *self, GtkListItem *listitem) {
 void
 t_csv_record_set_list_store (TCsvRecord *self, GListStore *liststore) {
   g_return_if_fail (T_IS_CSV_RECORD (self));
-  g_return_if_fail (G_IS_LIST_STORE (liststore) || liststore == NULL);
+  g_return_if_fail (sl_is_tcsv_stringlist (liststore) || liststore == NULL);
   if (self->liststore)
     g_object_unref (self->liststore);
   self->liststore = liststore ? g_object_ref (liststore) : NULL;
@@ -165,26 +62,9 @@ void
 t_csv_record_swap_strings (TCsvRecord *self, TCsvRecord *other) {
   g_return_if_fail (T_IS_CSV_RECORD (self));
   g_return_if_fail (T_IS_CSV_RECORD (other));
-  g_return_if_fail (G_IS_LIST_STORE (self->liststore));
-  g_return_if_fail (G_IS_LIST_STORE (t_csv_record_get_list_store(other)));
   GListStore *other_liststore = t_csv_record_get_list_store(other);
-  int n_items = g_list_model_get_n_items (G_LIST_MODEL(self->liststore));
-  g_return_if_fail (n_items == g_list_model_get_n_items (G_LIST_MODEL(other_liststore)));
 
-  TCsvStr *str_self, *str_other;
-  char *s;
-  int i;
-
-  for (i=0; i<n_items; ++i) {
-    str_self = T_CSV_STR (g_list_model_get_item (G_LIST_MODEL (self->liststore), i));
-    str_other = T_CSV_STR (g_list_model_get_item (G_LIST_MODEL (other_liststore), i));
-    s = t_csv_str_get_string (str_self);
-    g_object_set (str_self, "string", t_csv_str_look_string (str_other), NULL);
-    g_object_set (str_other, "string", s, NULL);
-    g_free (s);
-    g_object_unref (str_self);
-    g_object_unref (str_other);
-  }
+  sl_swap_strings (self->liststore, other_liststore);
 }
 
 static void
@@ -214,7 +94,7 @@ t_csv_record_class_init (TCsvRecordClass *class) {
 TCsvRecord *
 t_csv_record_new_with_data (GtkListItem *listitem, GListStore *liststore) {
   g_return_val_if_fail (GTK_IS_LIST_ITEM (listitem) || listitem == NULL, NULL);
-  g_return_val_if_fail (G_IS_LIST_STORE (liststore) || liststore == NULL, NULL);
+  g_return_val_if_fail (sl_is_tcsv_stringlist (liststore) || liststore == NULL, NULL);
   TCsvRecord *record;
 
   record = T_CSV_RECORD (g_object_new (T_TYPE_CSV_RECORD, NULL));
@@ -236,25 +116,10 @@ t_csv_record_new (void) {
 GtkStringList *
 r2sl (TCsvRecord *record) {
   g_return_val_if_fail (T_IS_CSV_RECORD (record), NULL);
-  g_return_val_if_fail (G_IS_LIST_STORE (t_csv_record_get_list_store (record)), NULL);
 
-  GtkStringList *stringlist;
-  GListStore *liststore;
-  TCsvStr *str;
-  int i, n_items;
-
-  liststore = t_csv_record_get_list_store (record);
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (liststore));
-  stringlist = gtk_string_list_new (NULL);
-  for (i=0; i<n_items; ++i) {
-    if ((str = g_list_model_get_item (G_LIST_MODEL (liststore), i)) == NULL || t_csv_str_look_string (str) == NULL)
-      gtk_string_list_append (stringlist, "");
-    else
-      gtk_string_list_append (stringlist, t_csv_str_look_string (str));
-    if (str)
-      g_object_unref (str);
-  }
-  g_object_unref (liststore);
+  GListStore *tcsv_stringlist = t_csv_record_get_list_store (record);
+  GtkStringList *stringlist = sl_to_gtk_string_list (tcsv_stringlist);
+  g_object_unref (tcsv_stringlist);
   return stringlist;
 }
 
@@ -263,19 +128,11 @@ sl2r (GtkStringList *stringlist) {
   g_return_val_if_fail (GTK_IS_STRING_LIST (stringlist), NULL);
 
   TCsvRecord *record;
-  GListStore *liststore;
-  TCsvStr *str;
-  int i, n_items;
+  GListStore *tcsv_stringlist;
 
-  liststore = g_list_store_new (T_TYPE_CSV_STR);
-  record = t_csv_record_new_with_data (NULL, liststore);
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (stringlist));
-  for (i=0; i<n_items; ++i) {    
-    str = t_csv_str_new_with_string (gtk_string_list_get_string (stringlist, i)); // str can have NULL string.
-    g_list_store_append (liststore, str);
-    g_object_unref (str);
-  }
-  g_object_unref (liststore);
+  tcsv_stringlist = sl_new_with_gtk_string_list (stringlist);
+  record = t_csv_record_new_with_data (NULL, tcsv_stringlist);
+  g_object_unref (tcsv_stringlist);
   return record;
 }
 
@@ -285,7 +142,7 @@ struct _TCsvWindow {
   GtkMenuButton *btnm;
   GtkColumnView *columnview;
   GtkSortListModel *sortlist;
-  GtkStringList *header;
+  GListStore *header; /* tcsv_stringlist */
   GListStore *body;
   int *n_column;
   int current_position; /* it can be negative when no current line exists. */
@@ -298,7 +155,7 @@ G_DEFINE_TYPE (TCsvWindow, t_csv_window, GTK_TYPE_APPLICATION_WINDOW)
 
 /* Update current position (current line) */
 static void
-update_current (TCsvWindow *win, int new) { /* new can be negatuve */
+update_current (TCsvWindow *win, int new) { /* new can be negative (when no current line exists) */
   TCsvRecord *record;
   int n_items = g_list_model_get_n_items (G_LIST_MODEL (win->body));
   GtkListItem *listitem;
@@ -308,7 +165,7 @@ update_current (TCsvWindow *win, int new) { /* new can be negatuve */
 
   if (new >= n_items)
     return;
-  if (win->current_position >=0) {
+  if (win->current_position >=0 && win->current_position <n_items) {
     record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position));
     if ((listitem = t_csv_record_get_list_item (record)) != NULL) {
       button = GTK_BUTTON (gtk_list_item_get_child (listitem));
@@ -332,53 +189,40 @@ update_current (TCsvWindow *win, int new) { /* new can be negatuve */
 /* ----- Button "clicked" signal handlers ----- */
 static void
 win_up_cb (GtkButton *btn, gpointer user_data) {
-  GtkListItem *listitem = GTK_LIST_ITEM (user_data);
-  TCsvWindow *win = T_CSV_WINDOW (gtk_widget_get_ancestor (GTK_WIDGET (btn), T_TYPE_CSV_WINDOW));
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
   TCsvRecord *record, *record_before;
-  int i;
 
-  i = gtk_list_item_get_position (listitem);
-  if (i == GTK_INVALID_LIST_POSITION || i == 0)
+  if (win->current_position <= 0)
     return;
-  record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i));
-  record_before = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i - 1));
+  record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position));
+  record_before = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position - 1));
   t_csv_record_swap_strings (record, record_before);
   g_object_unref (record);
   g_object_unref (record_before);
-  if (i == win->current_position)
-    update_current (win, i - 1);
-  else if (i - 1 == win->current_position)
-    update_current (win, i);
+  update_current (win, win->current_position - 1);
   win->saved = FALSE;
   gtk_window_set_focus (GTK_WINDOW (win), NULL);
 }
 
 static void
 win_down_cb (GtkButton *btn, gpointer user_data) {
-  GtkListItem *listitem = GTK_LIST_ITEM (user_data);
-  TCsvWindow *win = T_CSV_WINDOW (gtk_widget_get_ancestor (GTK_WIDGET (btn), T_TYPE_CSV_WINDOW));
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
   TCsvRecord *record, *record_after;
-  int i, n_items;
 
-  n_items = g_list_model_get_n_items (G_LIST_MODEL (win->body));
-  i = gtk_list_item_get_position (listitem);
-  if (i == GTK_INVALID_LIST_POSITION || i == n_items-1)
+  if (win->current_position < 0 || win->current_position >= g_list_model_get_n_items (G_LIST_MODEL (win->body)) - 1)
     return;
-  record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i));
-  record_after = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i + 1));
+  record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position));
+  record_after = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position + 1));
   t_csv_record_swap_strings (record, record_after);
   g_object_unref (record);
   g_object_unref (record_after);
-  if (i == win->current_position)
-    update_current (win, i + 1);
-  else if (i + 1 == win->current_position)
-    update_current (win, i);
+  update_current (win, win->current_position + 1);
   win->saved = FALSE;
   gtk_window_set_focus (GTK_WINDOW (win), NULL);
 }
 
-void
-win_current_cb (GtkButton *btn, gpointer user_data) {
+static void
+select_current_cb (GtkButton *btn, gpointer user_data) {
   GtkListItem *listitem = GTK_LIST_ITEM (user_data);
   TCsvWindow *win = T_CSV_WINDOW (gtk_widget_get_ancestor (GTK_WIDGET (btn), T_TYPE_CSV_WINDOW));
 
@@ -392,15 +236,11 @@ static char *
 record_get_nth_string (TCsvRecord *record, guint n) {
   char *s;
   GListStore *liststore;
-  TCsvStr *str;
 
   if ((liststore = t_csv_record_get_list_store (record)) == NULL)
     return NULL;
-  if ((str = T_CSV_STR (g_list_model_get_item (G_LIST_MODEL (liststore), n))) == NULL)
-    return NULL;
-  s = t_csv_str_get_string (str);
+  s = sl_get_string (liststore, n);
   g_object_unref (liststore);
-  g_object_unref (str);
   return s;
 }
 
@@ -409,14 +249,12 @@ static void
 setup1_cb (GtkListItemFactory *factory, GtkListItem *listitem) {
   GtkWidget *button = gtk_button_new ();
   gtk_list_item_set_child (listitem, button);
-  gtk_widget_set_focusable (GTK_WIDGET (button), FALSE);
-  g_signal_connect (button, "clicked", G_CALLBACK (win_current_cb), listitem);
+  gtk_widget_set_focusable (button, FALSE);
+  g_signal_connect (button, "clicked", G_CALLBACK (select_current_cb), listitem);
 }
 
 static void
 bind1_cb (GtkListItemFactory *factory, GtkListItem *listitem, gpointer user_data) {
-  g_return_if_fail (T_IS_CSV_RECORD (gtk_list_item_get_item (listitem)));
-
   TCsvWindow *win = T_CSV_WINDOW (user_data);
   GtkWidget *button = gtk_list_item_get_child (listitem);
   TCsvRecord *record = T_CSV_RECORD (gtk_list_item_get_item (listitem));
@@ -425,16 +263,15 @@ bind1_cb (GtkListItemFactory *factory, GtkListItem *listitem, gpointer user_data
 
   t_csv_record_set_list_item (record, listitem);
   if (win->current_position == gtk_list_item_get_position (listitem))
-    gtk_widget_set_css_classes (GTK_WIDGET (button), current);
+    gtk_widget_set_css_classes (button, current);
   else
-    gtk_widget_set_css_classes (GTK_WIDGET (button), non_current);
+    gtk_widget_set_css_classes (button, non_current);
 }
 
 static void
 unbind1_cb (GtkListItemFactory *factory, GtkListItem *listitem) {
   TCsvRecord *record = T_CSV_RECORD (gtk_list_item_get_item (listitem));
-  if (record)
-    t_csv_record_set_list_item (record, NULL);
+  t_csv_record_set_list_item (record, NULL);
 }
 
 static void
@@ -456,20 +293,18 @@ bind_cb (GtkListItemFactory *factory, GtkListItem *listitem, gpointer user_data)
     return;
   }
   TCsvStr *str = T_CSV_STR (g_list_model_get_item (G_LIST_MODEL (liststore), *position));
-  if (str == NULL) {
-    str = t_csv_str_new ();
-    g_list_store_remove (liststore, *position);
-    g_list_store_insert (liststore, *position, str);
-  }
   GtkWidget *text = gtk_list_item_get_child (listitem);
   GtkEntryBuffer *buffer;
   GBinding *bind;
   const char *s;
 
-  buffer = gtk_text_get_buffer (GTK_TEXT (text));
-  s = t_csv_str_look_string (str) ? t_csv_str_look_string (str) : "";
-  gtk_entry_buffer_set_text (buffer, s, -1);
-  bind = g_object_bind_property (buffer, "text", str, "string", G_BINDING_BIDIRECTIONAL);
+  if (str) {
+    buffer = gtk_text_get_buffer (GTK_TEXT (text));
+    s = t_csv_str_look_string (str) ? t_csv_str_look_string (str) : "";
+    gtk_entry_buffer_set_text (buffer, s, -1);
+    bind = g_object_bind_property (buffer, "text", str, "string", G_BINDING_BIDIRECTIONAL);
+  } else /* unexpected, though */
+    bind = NULL;
   g_object_set_data (G_OBJECT (listitem), "bind", bind);
   g_object_unref (liststore);
   g_object_unref (str);
@@ -479,7 +314,8 @@ static void
 unbind_cb (GtkListItemFactory *factory, GtkListItem *listitem) {
   GBinding *bind = G_BINDING (g_object_get_data (G_OBJECT (listitem), "bind"));
 
-  g_binding_unbind(bind);
+  if (bind)
+    g_binding_unbind(bind);
   g_object_set_data (G_OBJECT (listitem), "bind", NULL);
 }
 
@@ -494,7 +330,7 @@ remove_columns (TCsvWindow *win) {
   gtk_sort_list_model_set_model (win->sortlist, NULL);
   columns = gtk_column_view_get_columns (win->columnview);
   n_items = g_list_model_get_n_items (columns);
-  for (j=n_items-1; j>=3; --j) {
+  for (j=n_items-1; j>=1; --j) {
     column = GTK_COLUMN_VIEW_COLUMN (g_list_model_get_item (columns, j));
     gtk_column_view_remove_column (win->columnview, column);
     g_object_unref (column);
@@ -505,7 +341,7 @@ remove_columns (TCsvWindow *win) {
 
 /* The function takes the ownership of header and body. */
 static void
-build_columns (TCsvWindow *win, GtkStringList *header, GListStore *body) {
+build_columns (TCsvWindow *win, GListStore *header, GListStore *body) {
   int j, n_columns;
   GtkListItemFactory *factory;
   GtkColumnViewColumn *column;
@@ -531,7 +367,7 @@ build_columns (TCsvWindow *win, GtkStringList *header, GListStore *body) {
     g_signal_connect (factory, "bind", G_CALLBACK (bind_cb), win->n_column + j);
     g_signal_connect (factory, "unbind", G_CALLBACK (unbind_cb), NULL);
 
-    column = gtk_column_view_column_new (gtk_string_list_get_string (header, j), factory); /* factory is owned by the column. */
+    column = gtk_column_view_column_new (sl_look_string (header, j), factory); /* factory is owned by the column. */
 
     params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
     expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (record_get_nth_string), NULL, NULL);
@@ -571,7 +407,7 @@ append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   if (! win->header)
     return;
   record = create_new_record (win);
-  if (win->current_position >= 0) {
+  if (win->current_position >= 0 && win->current_position <g_list_model_get_n_items (G_LIST_MODEL (win->body))) {
     g_list_store_insert (win->body, win->current_position + 1, record);
     update_current (win, win->current_position + 1);
   } else {
@@ -587,7 +423,7 @@ remove_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   TCsvWindow *win = T_CSV_WINDOW (user_data);
   int old_position;
 
-  if (win->current_position >= 0) {
+  if (win->current_position >= 0 && win->current_position <g_list_model_get_n_items (G_LIST_MODEL (win->body))) {
     old_position = win->current_position;
     win->current_position = -1;
     g_list_store_remove (win->body, old_position);
@@ -599,39 +435,40 @@ remove_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
 static void
 rec_dialog_response_cb (TCsvRecDialog *rec_dialog, int response_id, gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (user_data);
-  GtkStringList *stringlist;
-  TCsvRecord *record;
+  GListStore *liststore;
+  TCsvRecord *new_record, *old_record;
 
   if (response_id == GTK_RESPONSE_ACCEPT) {
-    if ((stringlist = t_csv_rec_dialog_get_record (rec_dialog)) == NULL)
+    if ((liststore = t_csv_rec_dialog_get_liststore (rec_dialog)) == NULL)
       return;
-    record = sl2r (stringlist);
-    g_object_unref (stringlist);
-    g_list_store_remove (win->body, win->current_position);
-    g_list_store_insert (win->body, win->current_position, record);
-    g_object_unref (record);
+    new_record = t_csv_record_new_with_data (NULL, liststore);
+    g_object_unref (liststore);
+    old_record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position));
+    t_csv_record_swap_strings (old_record, new_record);
+    g_object_unref (new_record);
+    g_object_unref (old_record);
     win->saved = FALSE;
   }
   gtk_window_destroy (GTK_WINDOW (rec_dialog));
-  update_current (win, win->current_position);
+  // update_current (win, win->current_position);
 }
 
 static void
 edit_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (user_data);
   GtkWidget *rec_dialog;
-  GtkStringList *stringlist;
+  GListStore *liststore;
   TCsvRecord *record;
 
-  if (win->current_position < 0)
+  if (win->current_position < 0 || win->current_position >= g_list_model_get_n_items (G_LIST_MODEL (win->body)))
     return;
   if ((record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), win->current_position))) == NULL)
     return;
-  if ((stringlist = r2sl (record)) == NULL)
+  if ((liststore = t_csv_record_get_list_store (record)) == NULL)
     return;
   g_object_unref (record);
-  rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, stringlist, win->current_position);
-  g_object_unref (stringlist);
+  rec_dialog = t_csv_rec_dialog_new (GTK_WINDOW (win), win->header, liststore);
+  g_object_unref (liststore);
   g_signal_connect (rec_dialog, "response", G_CALLBACK (rec_dialog_response_cb), win);
   gtk_window_present (GTK_WINDOW (rec_dialog));
 }
@@ -644,7 +481,7 @@ insert_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   if (! win->header)
     return;
   record = create_new_record (win);
-  if (win->current_position >= 0) {
+  if (win->current_position >= 0 && win->current_position <g_list_model_get_n_items (G_LIST_MODEL (win->body))) {
     g_list_store_insert (win->body, win->current_position, record);
     win->current_position += 1; /* Current line has moved forward by one */
     update_current (win, win->current_position - 1);
@@ -658,12 +495,12 @@ static void
 t_csv_window_read (TCsvWindow *win, GFile *file) {
   GtkWidget *message_dialog;
   GError *err = NULL;
-  GtkStringList *header, *stringlist;
+  GListStore *header, *tcsv_stringlist;
   GListStore *body, *liststore;
   TCsvRecord *record;
   int i, n_row, n_column;
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   if (! csv_read (liststore, file, &n_row, &n_column, &err)) {
     message_dialog = gtk_message_dialog_new (GTK_WINDOW (win), GTK_DIALOG_MODAL,
                                              GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
@@ -674,15 +511,15 @@ t_csv_window_read (TCsvWindow *win, GFile *file) {
     return;
   }
 
-  header = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), 0));
+  header = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), 0));
   g_list_store_remove (liststore, 0);
   body = g_list_store_new (T_TYPE_CSV_RECORD);
   n_row = g_list_model_get_n_items (G_LIST_MODEL (liststore));
   n_column = g_list_model_get_n_items (G_LIST_MODEL (header));
   for (i=0; i<n_row; ++i) {
-    stringlist = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i));
-    record = sl2r (stringlist);
-    g_object_unref (stringlist);
+    tcsv_stringlist = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), i));
+    record = t_csv_record_new_with_data (NULL, tcsv_stringlist);
+    g_object_unref (tcsv_stringlist);
     g_list_store_append (body, record);
     g_object_unref (record);
   }
@@ -725,7 +562,7 @@ t_csv_window_write (TCsvWindow *win, GFile *file) {
   GError *err = NULL;
   GtkWidget *message_dialog;
   GListStore *liststore;
-  GtkStringList *stringlist;
+  GListStore *tcsv_stringlist;
   int i, n_row, n_column;
   TCsvRecord *record;
 
@@ -734,15 +571,15 @@ t_csv_window_write (TCsvWindow *win, GFile *file) {
     return;
   else
     win->busy = TRUE;
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   g_list_store_append (liststore, win->header);
   n_row = g_list_model_get_n_items (G_LIST_MODEL (win->body));
   for (i=0; i<n_row; ++i) {
     record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i));
-    stringlist = r2sl (record);
+    tcsv_stringlist = t_csv_record_get_list_store (record);
     g_object_unref (record);
-    g_list_store_append (liststore, stringlist);
-    g_object_unref (stringlist);
+    g_list_store_append (liststore, tcsv_stringlist);
+    g_object_unref (tcsv_stringlist);
   }
   n_row = g_list_model_get_n_items (G_LIST_MODEL (liststore));
   n_column = g_list_model_get_n_items (G_LIST_MODEL (win->header));
@@ -848,11 +685,11 @@ close_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 static void
 mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response_id, gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (user_data);
-  GtkStringList *new_header;
+  GListStore *new_header;
   GListStore *new_body;
   TCsvRecord *new_record, *record;
-  GListStore *liststore;
-  TCsvStr *str;
+  GListStore *tcsv_stringlist;
+  const char *s;
   GListStore *list_modify;
   TModify *modify;
   int i, n_row, j, n_modifies, n;
@@ -860,7 +697,7 @@ mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response_id, gpointer use
   if (response_id == GTK_RESPONSE_ACCEPT) {
     list_modify = t_csv_mod_dialog_get_list_modify (mod_dialog);
     n_modifies = g_list_model_get_n_items (G_LIST_MODEL (list_modify));
-    new_header = gtk_string_list_new (NULL);
+    new_header = g_list_store_new (T_TYPE_CSV_STR);
     new_body = g_list_store_new (T_TYPE_CSV_RECORD);
     n_row = win->body ? g_list_model_get_n_items (G_LIST_MODEL (win->body)) : 0;
     /* n <= the number of items to copy */
@@ -874,29 +711,28 @@ mod_dialog_response_cb (TCsvModDialog *mod_dialog, int response_id, gpointer use
       modify = g_list_model_get_item (G_LIST_MODEL (list_modify), j);
       if (t_modify_look_new_string (modify) && *(t_modify_look_new_string (modify))) { /* not NULL nor "" */
         // append str to header
-        gtk_string_list_append (new_header, t_modify_look_new_string (modify));
+        sl_append_string (new_header, t_modify_look_new_string (modify));
         if (n > 0) /* if new_body takes over the old body */
           for (i=0; i<n_row; ++i) {
             if ((new_record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (new_body), i))) == NULL) {
-              liststore = g_list_store_new (T_TYPE_CSV_STR);
-              new_record = t_csv_record_new_with_data (NULL, liststore);
-              g_object_unref (liststore);
+              tcsv_stringlist = g_list_store_new (T_TYPE_CSV_STR);
+              new_record = t_csv_record_new_with_data (NULL, tcsv_stringlist);
+              g_object_unref (tcsv_stringlist);
               g_list_store_append (new_body, new_record);
             }
             if (t_modify_get_old_position (modify)>= 0) {
               record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i));
-              liststore = t_csv_record_get_list_store (record);
-              str = T_CSV_STR (g_list_model_get_item (G_LIST_MODEL (liststore), t_modify_get_old_position (modify)));
-              if (str == NULL)
-                str = t_csv_str_new_with_string ("");
-              g_object_unref (liststore);
+              tcsv_stringlist = t_csv_record_get_list_store (record);
+              s = sl_look_string (tcsv_stringlist, t_modify_get_old_position (modify));
+              if (s == NULL)
+                s = "";
+              g_object_unref (tcsv_stringlist);
               g_object_unref (record);
             } else
-              str = t_csv_str_new_with_string ("");
-            liststore = t_csv_record_get_list_store (new_record);
-            g_list_store_append (liststore, str);
-            g_object_unref (str);
-            g_object_unref (liststore);
+              s = "";
+            tcsv_stringlist = t_csv_record_get_list_store (new_record);
+            sl_append_string (tcsv_stringlist, s);
+            g_object_unref (tcsv_stringlist);
             g_object_unref (new_record);
           }
       }
@@ -969,7 +805,6 @@ t_csv_window_dispose (GObject *gobject) {
   // win->body is owned by the column view.
   g_clear_object (&win->file);
   G_OBJECT_CLASS (t_csv_window_parent_class)->dispose (gobject);
-
 }
 
 static void

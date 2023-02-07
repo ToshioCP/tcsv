@@ -104,10 +104,10 @@ There's a title bar at the top of the window.
 It has title, minimize button, maximize/restore button and close button.
 (It depends on your windowing sysytem, though.)
 There's a tool bar below the title bar.
-It has six buttons.
-Two buttons `Append Record` and `Remove Record` are on the left.
+It has nine buttons.
+Five buttons `Append Record`, `Remove Record`, `Edit Record`, `↑` and `↓` are on the left.
 And four buttons `Open`, `Save`, `Close` and a menu button (hamburger menu) are on the right.
-These six buttons are often used.
+These nine buttons are often used.
 
 If you click on the menu button, a popup menu appears.
 There are seven menus.
@@ -118,7 +118,7 @@ They are less used than the buttons on the tool bar.
 
 - Click on `Open` button, then you can read a csv file.
 - Click on `Save` button, then you can overwrite the csv file which you've read.
-- Click on the menu button and select `Save as`, then you can write your csv data with a file name.
+- Click on the menu button and select `Save as` menu, then you can write your csv data with a file name.
 
 There're sample csv files in the top directory of the source files.
 One of them is "tcsv_object.csv".
@@ -145,14 +145,21 @@ If the number of records are more than the number of rows in the screen, you can
 Click on the menu button and select `New` menu.
 Then "Modify fields" dialog appears.
 
-There are three buttons on the tool bar.
+The first column is "current".
+The cells in the first column is buttons.
+If you click on a button, the row becomes "current row" and the bottun color changes to red.
+Only one row can be a "current row".
+
+There are five buttons on the tool bar.
 
 - `Append new field`
-- `Insert new field before` followed by a GtkEntry. The number can be edited. Its default is zero.
-- `Clean`
+- `Insert new field`.
+- `Remove field`
+- `↑`
+- `↓`
   
-Click on `Append new field`, then a new row is added to the end of the rows.
-Click on `Insert new field`, then a new row appears before the row that has a line number in the GtkEntry.
+Click on `Append new field`, then a new row is added to the next of the current row or the end of the rows if no current row exists.
+Click on `Insert new field`, then a new row appears before the current row or the first row if no current row exists.
 The last column of the rows are entries (GtkText).
 You can enter characters from your keyboard.
 But only visible characters can be inputted.
@@ -165,8 +172,7 @@ Then click on `Append Field` button twice.
 Two new rows appear.next to the row "field 1".
 Type "field 2" and "field 3" on the new two entries.
 Now you mad three fields.
-If you want to remove "field 3", delete the text.
-Empty string makes no field.
+If you want to remove "field 3", click on the bottun on the row and click on "Remove field" button.
 
 Click on the `Save` button at the bottom of the dialog, then the dialog disappears.
 And the main window appears with fields you made.
@@ -175,37 +181,45 @@ It has two fields, `field 1` and `field 2`.
 
 ### Create/edit a record
 
-Double click the orange row or click on the row and press enter key, then the "Record Editor" dialog appears.
+There is a button at the left of each row.
+If you click on the button, the button color changes to red.
+The red button indicates the row is current.
+If you click on another bottun, the new button is colored red and the previous red button changes its color to white.
+So, there is only one red color button at most.
+
+When a current row exists (that means the row has a red button),
+you can click on "Append Record", "Remove Record", "Edit Record", "↑" and "↓" buttons.
+
+- Append Record: appends a new row after the current row.
+- Remove Record:  removes the current row. After that, no current row exists.
+- Edit Record: A new dialog appears and you can edit the current record.
+- ↑: Move up the current row by one.
+- ↓: Move down the current row by one.
+
+You can click on the "Insert Record" menu and insert a new row before the current row.
+
+When you clicked on the "Edit Record" button, a dialog appears.
 There are two columns.
 "Header" and "Record".
-There are field names in the first column.
-The elements of the second column are text entries.
-Type something in the entries.
-For example, "one" and "two".
-Click on the `Save` button, then the dialog disappears and there are a new record in the table.
-They're "one" and "two" which you have put in the entries in the dialog.
+You can't edit "Header" column but you can edit "Record" column.
+After editing, click on the `Save` button.
+Then the dialog disappears and the change is seen in the main window.
 
-- If you click on a record, then the record is selected.
-The selected record is colored with orange.
-- Double click on a record, then you can edit the record with the "Record Editor" dialog.
-You can select a record and push enter key as well.
-- Select a record and click on the `Append Record` button, then a new empty record is inserted after the selected record.
-And the "Record Editor" dialog appears immediately.
-- Select a record. Click on the menu button and select `Insert Record` menu, then a new empty record is inserted before the selected record.
-And the "Record Editor" dialog appears immediately.
+You can edit records in the main window.
+However, the entries in it are not so big.
+If you enter a long string, a part of it will be hidden.
+"Edit Record" button and the edit dialog is helpful for such long strings.
 
-### Save a csv data
+### Save csv data
 
 Click on the "Save" button.
-A file chooser dialog appears.
+If you make a new csv data, a file chooser dialog appears.
 Type "example.csv" and click on `Save` button.
 Then a file "example.csv" is created and the contents of the table are written to the file.
 
 Click on the "Close" button, then the contents disappear.
 
 Click on the "Open" button, select "example.csv" and click on the "Open" button, then the contents of "example.csv" appears again.
-There's one record.
-The contents of the record are "one" and "two".
 
 ### Restructure fields
 
@@ -215,10 +229,9 @@ However, sometimes you need to change the fields later.
 You can restructure the fields by clicking `Modify Fields` menu.
 
 If you click the menu, "Modify Fields" dialog appears.
-It has seven columns.
+It has six columns.
 
-- Up: Moves the field (row) one up.
-- down: Move the field (row) one down.
+- Current: shows whether the row (field) is current or not. If you click on the button on the "current" column, the row will be "current".
 - Old position: The position of the old field. This never changes even if rows are added or deleted.
 - Old Field: The names of the old fields. They can't be modified.
 - State: There are three states, "Changed", "Added" and "Removed".
@@ -226,26 +239,19 @@ It has seven columns.
 - New Field: The names of the new fields. They can be modified.
 If the name of a new field is an empty string, the field will be removed.
 
-There are three buttons.
-
-- `Append new field`: This button creates a new field (row) and append it to the list.
-- `Insert new fField before` followed by a GtkEntry. The number can be edited. Its default is zero.
-This button inserts a new field (row) before the line (the entry's text is the line number).
-- `Clean`: If there is a line which has the following contents, they are removed.
-  - The old position is -1.
-  - The old field is an empty string.
-  - The new field is an empty string.
+There are five buttons.
+These are the same as the buttons on the dialog when you click on the "New" menu.
 
 Now, let's try to restructure fields of "example.csv".
-If your table in the main window is empty, click on the "Open" button and read "example,csv".
+If your table in the main window is empty, click on the "Open" button and read "example.csv".
 Then click on the `Modify Fields` menu.
 
 First, the "Modify Fields" dialog is as follows.
 
-|Up|Down|Old position|Old field|State|New position|New field|
-|:-:|:-:|:----------:|:-------:|:---:|:----------:|:-------:|
-|↑|↓|     0        |field 1  |     |     0      | field 1 |
-|↑|↓|     1        |field 2  |     |     1      | field 2 |
+|Current|Old position|Old field|State|New position|New field|
+|:-:|:----------:|:-------:|:---:|:----------:|:-------:|
+|   |    0       |field 1  |     |     0      | field 1 |
+|   |    1       |field 2  |     |     1      | field 2 |
 
 - Change "field 1" into "City".
 - Change "field 2" into "Country".
@@ -255,12 +261,12 @@ Then, a new field is added at the bottom of the list.
 - Click the `Append new field` button and append a new field.
 - Fill in the new field with "Area".
 
-|Up|Down|Old position|Old field| State |New position|New field |
-|:-:|:-:|:----------:|:-------:|:-----:|:----------:|:--------:|
-|↑|↓|     0        |field 1  |changed|     0      |   City   |
-|↑|↓|     1        |field 2  |changed|     1      | Country  |
-|↑|↓|    -1        |         |Added  |     2      |Population|
-|↑|↓|    -1        |         |Added  |     3      |   Area   |
+|Current|Old position|Old field| State |New position|New field |
+|:-:|:----------:|:-------:|:-----:|:----------:|:--------:|
+|   |    0       |field 1  |changed|     0      |   City   |
+|   |    1       |field 2  |changed|     1      | Country  |
+|   |   -1       |         |Added  |     2      |Population|
+|   |   -1       |         |Added  |     3      |   Area   |
 
 Click on the `Save` button.
 The dialog disappears and the new fields appear on the header of the table in the main window.

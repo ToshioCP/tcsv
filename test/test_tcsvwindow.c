@@ -5,7 +5,8 @@ static void
 test_t_csv_window_read (TCsvWindow *win) {
   GFile *file;
   int i, j;
-  GtkStringList *record;
+  TCsvRecord *record;
+  GListStore *liststore;
 /* The elements of sample1.csv */
   char *a[3][4] = {
     {"a", "bc", "def", "あいう"},
@@ -17,14 +18,16 @@ test_t_csv_window_read (TCsvWindow *win) {
   t_csv_window_read (T_CSV_WINDOW (win), file);
   g_object_unref (file);
   for (j=0; j<4; ++j)
-    if (g_strcmp0 (gtk_string_list_get_string (win->header, j), a[0][j]) != 0)
-      g_print ("column(%d) of the header should be '%s', but is '%s'.\n", j, a[0][j], gtk_string_list_get_string (win->header, j));
+    if (g_strcmp0 (sl_look_string (win->header, j), a[0][j]) != 0)
+      g_print ("column(%d) of the header should be '%s', but is '%s'.\n", j, a[0][j], sl_look_string (win->header, j));
   for (i=0; i<2; ++i) {
-    record = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (win->body), i));
-    for (j=0; j<4; ++j)
-      if (g_strcmp0 (gtk_string_list_get_string (record, j), a[i+1][j]) != 0)
-        g_print ("The element (%d, %d) should be '%s(, but is '%s'.\n", i, j, a[i+1][j], gtk_string_list_get_string (record, j));
+    record = T_CSV_RECORD (g_list_model_get_item (G_LIST_MODEL (win->body), i));
+    liststore = t_csv_record_get_list_store (record);
     g_object_unref (record);
+    for (j=0; j<4; ++j)
+      if (g_strcmp0 (sl_look_string (liststore, j), a[i+1][j]) != 0)
+        g_print ("The element (%d, %d) should be '%s(, but is '%s'.\n", i, j, a[i+1][j], sl_look_string (liststore, j));
+    g_object_unref (liststore);
   }
 }
 

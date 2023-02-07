@@ -1,5 +1,4 @@
 #include <gtk/gtk.h>
-#include "../tcsv.h"
 #include "../tcsv.c"
 
 static char *sample1 = 
@@ -63,7 +62,7 @@ test_csv_real_validate (void) {
 static void
 test_csv_real_read (void) {
   GListStore *liststore;
-  GtkStringList *record;
+  GListStore *record;
   char *contents;
   size_t length;
   int n_row, n_column;
@@ -71,7 +70,7 @@ test_csv_real_read (void) {
   int i, j;
   const char *s;
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   contents = sample1;
   length = (size_t) (strlen (contents) + 1);
   n_row = 3;
@@ -83,12 +82,12 @@ test_csv_real_read (void) {
     g_print ("    %s\n", err->message);
   } else {
     for (i=0; i<n_row; ++i) {
-      if (! GTK_IS_STRING_LIST (record = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i)))) {
-        g_print ("liststore[%d] isn't GStringList.\n", i);
+      if (! sl_is_tcsv_stringlist (record = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), i)))) {
+        g_print ("liststore[%d] isn't tcsv_stringlist.\n", i);
         continue;
       }
       for (j=0; j<n_column; ++j) {
-        s = gtk_string_list_get_string (record, j);
+        s = sl_look_string (record, j);
         if (s == NULL)
           g_print ("(%d, %d) string is NULL.\n", i, j);
         else if (strcmp (s, sample1_array[i][j]) != 0) {
@@ -104,7 +103,7 @@ test_csv_real_read (void) {
 static void
 test_csv_real_write (void) {
   GListStore *liststore;
-  GtkStringList *record;
+  GListStore *record;
   char *contents;
   size_t length;
   int n_row, n_column;
@@ -119,14 +118,14 @@ test_csv_real_write (void) {
   char *csv ="a,bc,def,\"gh\nij\"\n1,23,456,\"78\"\"90\"\n\"\"\"one\"\"\",\", \"\"two\"\"\",\", \"\"three\"\"\",\"and \"\"four\"\"\n\"\n";
 
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   n_row = 3;
   n_column = 4;
   for (i=0; i<n_row; ++i) {
-    record = gtk_string_list_new (NULL);
+    record = g_list_store_new (T_TYPE_CSV_STR);
     g_list_store_append (liststore, record);
     for (j=0; j<n_column; ++j)
-      gtk_string_list_append (record, a[i][j]);
+      sl_append_string (record, a[i][j]);
   }
   if ((contents = csv_real_write (liststore, n_row, n_column, &length, &err)) == NULL)
     g_print ("%s\n", err->message);
@@ -146,14 +145,15 @@ test_csv_real_write (void) {
     {"\"one\"", ", \"two\"", ", \"three\"", "and \"four\"\n"}
   };
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   n_row = 3;
   n_column = 4;
   for (i=0; i<n_row; ++i) {
-    record = gtk_string_list_new (NULL);
+    record = g_list_store_new (T_TYPE_CSV_STR);
     g_list_store_append (liststore, record);
     for (j=0; j<n_column; ++j)
-      gtk_string_list_append (record, b[i][j]);
+      if (b[i][j])
+        sl_append_string (record, b[i][j]);
   }
   if ((contents = csv_real_write (liststore, n_row, n_column, &length, &err)) == NULL) {
     if (err->code != T_CSV_ERROR_NO_STRING) {
@@ -203,7 +203,7 @@ test_csv_validate (void) {
 static void
 test_csv_read (void) {
   GListStore *liststore;
-  GtkStringList *record;
+  GListStore *record;
   GFile *file;
   int n_row, n_column;
   GError *err = NULL;
@@ -215,7 +215,7 @@ test_csv_read (void) {
   };
   const char *s;
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   file = g_file_new_for_path ("sample1.csv");
   if (! csv_read (liststore, file, &n_row, &n_column, &err)) {
     g_print ("'sample1.csv' is a correct csv file, but csv_read returns FALSE.\n");
@@ -227,9 +227,9 @@ test_csv_read (void) {
     g_print ("Correct size = (3, 4), but csv_read returned (%d, %d).\n", n_row, n_column);
   } else {
     for (i=0; i<n_row; ++i) {
-      record = GTK_STRING_LIST (g_list_model_get_item (G_LIST_MODEL (liststore), i));
+      record = G_LIST_STORE (g_list_model_get_item (G_LIST_MODEL (liststore), i));
       for (j=0; j<n_column; ++j) {
-        s = gtk_string_list_get_string (record, j);
+        s = sl_look_string (record, j);
         if (s == NULL)
           g_print ("(%d, %d) string is NULL.\n", i, j);
         else if (strcmp (s, a[i][j]) != 0)
@@ -241,7 +241,7 @@ test_csv_read (void) {
   g_object_unref (file);
   g_object_unref (liststore);
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   file = g_file_new_for_path ("sample3.csv");
   if (csv_read (liststore, file, &n_row, &n_column, &err)) {
     g_print ("'sample3.csv' is an incorrect csv file, but csv_read returns TRUE.\n");
@@ -290,7 +290,7 @@ test_t_strcmp_len (void) {
 static void
 test_csv_write (void) {
   GListStore *liststore;
-  GtkStringList *record;
+  GListStore *record;
   GFile *file;
   int n_row, n_column;
   GError *err = NULL;
@@ -305,14 +305,14 @@ test_csv_write (void) {
   char *contents;
   size_t length;
 
-  liststore = g_list_store_new (GTK_TYPE_STRING_LIST);
+  liststore = g_list_store_new (G_TYPE_LIST_STORE);
   n_row = 3;
   n_column = 4;
   for (i=0; i<n_row; ++i) {
-    record = gtk_string_list_new (NULL);
+    record = g_list_store_new (T_TYPE_CSV_STR);
     g_list_store_append (liststore, record);
     for (j=0; j<n_column; ++j)
-      gtk_string_list_append (record, a[i][j]);
+      sl_append_string (record, a[i][j]);
     g_object_unref (record);
   }
   file = g_file_new_for_path ("sample4.csv");

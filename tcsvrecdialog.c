@@ -1,39 +1,33 @@
 #include "tcsvrecdialog.h"
 #include "tmodify.h"
+#include "tcsvstr.h"
+#include "tcsvstringlist.h"
 
 struct _TCsvRecDialog
 {
   GtkDialog parent;
   GtkColumnViewColumn *column2;
   GListStore *liststore;
-  int position;
 };
 
 G_DEFINE_TYPE (TCsvRecDialog, t_csv_rec_dialog, GTK_TYPE_DIALOG);
 
-GtkStringList *
-t_csv_rec_dialog_get_record (TCsvRecDialog *rec_dialog) {
+GListStore *
+t_csv_rec_dialog_get_liststore (TCsvRecDialog *rec_dialog) {
   g_return_val_if_fail (T_IS_CSV_REC_DIALOG (rec_dialog), NULL);
 
-  GtkStringList *record;
+  GListStore *liststore;
   int i, n_items;
   TModify *modify;
 
-  record = gtk_string_list_new (NULL);
+  liststore = g_list_store_new (T_TYPE_CSV_STR);
   n_items = g_list_model_get_n_items (G_LIST_MODEL (rec_dialog->liststore));
   for (i=0; i<n_items; ++i) {
     modify = T_MODIFY (g_list_model_get_item (G_LIST_MODEL (rec_dialog->liststore), i));
-    gtk_string_list_append (record, t_modify_look_new_string (modify));
+    sl_append_string (liststore, t_modify_look_new_string (modify));
     g_object_unref (modify);
   }
-  return record;
-}
-
-int
-t_csv_rec_dialog_get_position (TCsvRecDialog *rec_dialog) {
-  g_return_val_if_fail (T_IS_CSV_REC_DIALOG (rec_dialog), -1);
-
-  return rec_dialog->position;
+  return liststore;
 }
 
 static void
@@ -85,26 +79,25 @@ t_csv_rec_dialog_class_init (TCsvRecDialogClass *class) {
 }
 
 GtkWidget *
-t_csv_rec_dialog_new (GtkWindow *win, GtkStringList *header, GtkStringList *record, int position) {
+t_csv_rec_dialog_new (GtkWindow *win, GListStore *header, GListStore *liststore) {
   g_return_val_if_fail (GTK_IS_WINDOW (win) || win == NULL, NULL);
-  g_return_val_if_fail (GTK_IS_STRING_LIST (header), NULL);
-  g_return_val_if_fail (GTK_IS_STRING_LIST (record), NULL);
+  g_return_val_if_fail (sl_is_tcsv_stringlist (header), NULL);
+  g_return_val_if_fail (sl_is_tcsv_stringlist (liststore), NULL);
 
   TCsvRecDialog *rec_dialog;
   int j, n_items;
   TModify *modify;
 
   n_items = g_list_model_get_n_items (G_LIST_MODEL (header));
-  if (n_items != g_list_model_get_n_items (G_LIST_MODEL (record)))
+  if (n_items != g_list_model_get_n_items (G_LIST_MODEL (liststore)))
     return NULL;
 
-  T_TYPE_MODIFY;
+  T_TYPE_MODIFY; /* register T_TYPE_MODIFY */
   rec_dialog = T_CSV_REC_DIALOG (g_object_new (T_TYPE_CSV_REC_DIALOG, "transient-for", win, NULL));
   for (j=0; j<n_items; ++j) {
-    modify = t_modify_new_with_data (-1, -1, gtk_string_list_get_string (header, j), gtk_string_list_get_string (record, j));
+    modify = t_modify_new_with_data (-1, -1, sl_look_string (header, j), sl_look_string (liststore, j));
     g_list_store_append (rec_dialog->liststore, modify);
     g_object_unref (modify);
   }
-  rec_dialog->position = position;
   return GTK_WIDGET (rec_dialog);
 }
