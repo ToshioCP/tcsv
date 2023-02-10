@@ -95,6 +95,7 @@
               <object class="GtkColumnView" id="columnview">
                 <property name="hexpand">TRUE</property>
                 <property name="vexpand">TRUE</property>
+                <property name="reorderable">FALSE</property>
                 <property name="model">
                   <object class="GtkNoSelection">
                     <property name="model">

@@ -108,34 +108,6 @@ t_csv_record_new (void) {
   return T_CSV_RECORD (g_object_new (T_TYPE_CSV_RECORD, NULL));
 }
 
-/* ----- converter ----- */
-/* TCsvRecord <=> GtkStringList */
-// TCsvRecord is useful for TCsvWindow. It can be edited and have the current line.
-// But it is a bit complicated.
-// GtkStringList is simple and useful for interface to other objects.
-GtkStringList *
-r2sl (TCsvRecord *record) {
-  g_return_val_if_fail (T_IS_CSV_RECORD (record), NULL);
-
-  GListStore *tcsv_stringlist = t_csv_record_get_list_store (record);
-  GtkStringList *stringlist = sl_to_gtk_string_list (tcsv_stringlist);
-  g_object_unref (tcsv_stringlist);
-  return stringlist;
-}
-
-TCsvRecord *
-sl2r (GtkStringList *stringlist) {
-  g_return_val_if_fail (GTK_IS_STRING_LIST (stringlist), NULL);
-
-  TCsvRecord *record;
-  GListStore *tcsv_stringlist;
-
-  tcsv_stringlist = sl_new_with_gtk_string_list (stringlist);
-  record = t_csv_record_new_with_data (NULL, tcsv_stringlist);
-  g_object_unref (tcsv_stringlist);
-  return record;
-}
-
 /* ----- TCsvWindow ----- */
 struct _TCsvWindow {
   GtkApplicationWindow parent;
@@ -368,6 +340,9 @@ build_columns (TCsvWindow *win, GListStore *header, GListStore *body) {
     g_signal_connect (factory, "unbind", G_CALLBACK (unbind_cb), NULL);
 
     column = gtk_column_view_column_new (sl_look_string (header, j), factory); /* factory is owned by the column. */
+    if (j == n_columns-1)
+      gtk_column_view_column_set_expand (column, TRUE);
+    gtk_column_view_column_set_resizable (column, TRUE);
 
     params[0] = gtk_constant_expression_new (G_TYPE_INT, j);
     expression = gtk_cclosure_expression_new (G_TYPE_STRING, NULL, 1, params, G_CALLBACK (record_get_nth_string), NULL, NULL);
