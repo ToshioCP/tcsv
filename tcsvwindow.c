@@ -380,7 +380,7 @@ static void
 scroll (gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (user_data);
 
-  double page_size, lower, upper, max, value, current, target, height;
+  double page_size, lower, upper, value, v_current, v_next, height;
   int n_items;
 
   n_items = g_list_model_get_n_items (G_LIST_MODEL (win->body));
@@ -390,24 +390,21 @@ scroll (gpointer user_data) {
   lower = gtk_adjustment_get_lower (win->vadjustment);
   upper = gtk_adjustment_get_upper (win->vadjustment);
   value = gtk_adjustment_get_value (win->vadjustment);
-  max = (upper - page_size) < lower ? lower : upper - page_size;
-  // "current" is the point of the current row on the adjustment
-  current = (double) win->current_position * (upper - lower) / (double) (n_items - 1);
-  // "height" is the height of a line on the adjustment
+  // height is the height of a line on the adjustment.
   height = (upper - lower) / n_items;
-  // "target" is the upper point of the current row
-  for (target = lower; current > target + height; target += height)
-    ;
+  // "v_current" is the point of the top of the current row on the adjustment
+  v_current = (double) win->current_position * height + lower;
+  // "v_next" is the point of the top of the next of the current row on the adjustment
+  v_next = (double) (win->current_position + 1) * height + lower;
 // debug
-// g_print ("value=%f\npage_size=%f\nvalue+page_size=%f\ncurrent=%f\n", value, page_size, value+page_size, current);
+// g_print ("page_size=%f\nlower=%f\nupper=%f\nvalue=%f\nheight=%f\nv_current=%f\nv_next=%f\n",
+//   page_size, lower, upper, value, height, v_current, v_next);
   if (page_size < height)
     ; /* unexpected */
-  else if (lower <= target && target < value)
-    gtk_adjustment_set_value (win->vadjustment, target);
-  else if (value + page_size < target && target < max)
-    gtk_adjustment_set_value (win->vadjustment, target - page_size + height);
-  else if (value + page_size < target)
-    gtk_adjustment_set_value (win->vadjustment, max);
+  else if (v_current < value)
+    gtk_adjustment_set_value (win->vadjustment, v_current);
+  else if (value + page_size < v_next)
+    gtk_adjustment_set_value (win->vadjustment, v_next - page_size);
   else
     ; /* The line is on the display. */
 }
