@@ -87,7 +87,7 @@
             <property name="hexpand">TRUE</property>
             <property name="vexpand">TRUE</property>
             <property name="vadjustment">
-              <object class="GtkAdjustment">
+              <object class="GtkAdjustment" id="vadjustment">
                 <signal name="value-changed" handler="adjustment_value_changed_cb" swapped="no" object="TCsvWindow"/>
               </object>
             </property>

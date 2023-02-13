@@ -114,6 +114,7 @@ struct _TCsvWindow {
   GtkMenuButton *btnm;
   GtkColumnView *columnview;
   GtkSortListModel *sortlist;
+  GtkAdjustment *vadjustment;
   GListStore *header; /* tcsv_stringlist */
   GListStore *body;
   int *n_column;
@@ -374,6 +375,43 @@ create_new_record (TCsvWindow *win) {
   return record;
 }
 
+/* This function is called some time (0.1 ms) after adding item to the list. */
+static void
+scroll (gpointer user_data) {
+  TCsvWindow *win = T_CSV_WINDOW (user_data);
+
+  double page_size, lower, upper, max, value, current, target, height;
+  int n_items;
+
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (win->body));
+  if (n_items == 0 || win->current_position < 0 || win->current_position >= n_items)
+    return;
+  page_size = gtk_adjustment_get_page_size (win->vadjustment);
+  lower = gtk_adjustment_get_lower (win->vadjustment);
+  upper = gtk_adjustment_get_upper (win->vadjustment);
+  value = gtk_adjustment_get_value (win->vadjustment);
+  max = (upper - page_size) < lower ? lower : upper - page_size;
+  // "current" is the point of the current row on the adjustment
+  current = (double) win->current_position * (upper - lower) / (double) (n_items - 1);
+  // "height" is the height of a line on the adjustment
+  height = (upper - lower) / n_items;
+  // "target" is the upper point of the current row
+  for (target = lower; current > target + height; target += height)
+    ;
+// debug
+// g_print ("value=%f\npage_size=%f\nvalue+page_size=%f\ncurrent=%f\n", value, page_size, value+page_size, current);
+  if (page_size < height)
+    ; /* unexpected */
+  else if (lower <= target && target < value)
+    gtk_adjustment_set_value (win->vadjustment, target);
+  else if (value + page_size < target && target < max)
+    gtk_adjustment_set_value (win->vadjustment, target - page_size + height);
+  else if (value + page_size < target)
+    gtk_adjustment_set_value (win->vadjustment, max);
+  else
+    ; /* The line is on the display. */
+}
+
 static void
 append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer user_data) {
   TCsvWindow *win = T_CSV_WINDOW (user_data);
@@ -381,6 +419,7 @@ append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
 
   if (! win->header)
     return;
+  gtk_window_set_focus (GTK_WINDOW (win), NULL);
   record = create_new_record (win);
   if (win->current_position >= 0 && win->current_position <g_list_model_get_n_items (G_LIST_MODEL (win->body))) {
     g_list_store_insert (win->body, win->current_position + 1, record);
@@ -391,6 +430,8 @@ append_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   }
   g_object_unref (record);
   win->saved = FALSE;
+  /* Some time needs to update GtkColumnView and GtkScrolledWindow. */
+  g_timeout_add_once (100, scroll, win); /* time (ms), function, data */
 }
 
 static void
@@ -455,6 +496,7 @@ insert_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
 
   if (! win->header)
     return;
+  gtk_window_set_focus (GTK_WINDOW (win), NULL);
   record = create_new_record (win);
   if (win->current_position >= 0 && win->current_position <g_list_model_get_n_items (G_LIST_MODEL (win->body))) {
     g_list_store_insert (win->body, win->current_position, record);
@@ -463,6 +505,8 @@ insert_record_activated (GSimpleAction *action, GVariant *parameter, gpointer us
   }
   g_object_unref (record);
   win->saved = FALSE;
+  /* Some time needs to update GtkColumnView and GtkScrolledWindow. */
+  g_timeout_add_once (100, scroll, win); /* time (ms), function, data */
 }
 
 /* open and read functions */
@@ -823,6 +867,7 @@ t_csv_window_class_init (TCsvWindowClass *class) {
   object_class->dispose = t_csv_window_dispose;
   gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (class), "/com/github/ToshioCP/tcsv/tcsvwindow.ui");
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, columnview);
+  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, vadjustment);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, sortlist);
   gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (class), TCsvWindow, btnm);
   gtk_widget_class_bind_template_callback (GTK_WIDGET_CLASS (class), win_up_cb);
